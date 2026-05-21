@@ -1,4 +1,4 @@
-# Mst. Sadia Afrin Shimu — Academic Portfolio
+# — Academic Portfolio
 
 A static academic portfolio website built with HTML, CSS, and vanilla JavaScript.
 
