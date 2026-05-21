@@ -10,8 +10,8 @@ const __dirname = path.dirname(__filename);
 export const rootDir = path.resolve(__dirname, '..', '..');
 export const dataDir = path.resolve(__dirname, '..', 'data');
 export const contentFile = path.resolve(dataDir, 'content.json');
-export const publicDir = path.resolve(rootDir, 'public');
-export const publicImagesDir = path.resolve(publicDir, 'images');
+export const publicDir = rootDir;
+export const publicImagesDir = path.resolve(rootDir, 'images');
 
 export function sanitizeFileName(filename) {
   const safeName = path.basename(String(filename || ''))

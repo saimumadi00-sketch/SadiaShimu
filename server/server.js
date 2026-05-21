@@ -8,7 +8,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import authRoutes from './routes/auth.js';
 import contentRoutes from './routes/content.js';
-import { initDb, publicDir, rootDir } from './db/database.js';
+import { initDb, rootDir } from './db/database.js';
 
 const PORT = process.env.PORT || 3000;
 const WRITER_EMAIL = process.env.WRITER_EMAIL || 'saditto.adiya@gmail.com';
@@ -96,7 +96,18 @@ app.use(session({
   }
 }));
 
-app.use(express.static(publicDir));
+// Serve uploaded images from /images/ URL path
+app.use('/images', express.static(path.join(rootDir, 'images')));
+
+// Serve portfolio CSS and JS
+app.use('/css', express.static(path.join(rootDir, 'css')));
+app.use('/js',  express.static(path.join(rootDir, 'js')));
+
+// Serve the portfolio index.html at the root
+app.get('/', (req, res) => {
+  res.sendFile(path.join(rootDir, 'index.html'));
+});
+
 app.use('/admin', express.static(path.join(rootDir, 'admin')));
 
 app.post('/api/login', loginLimiter);
