@@ -3,20 +3,127 @@ import multer from 'multer';
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { body, validationResult } from 'express-validator';
 import requireAuth from '../middleware/requireAuth.js';
-import { db, saveDb, publicImagesDir } from '../db/database.js';
+import { db, saveDb, publicImagesDir, sanitizeFileName } from '../db/database.js';
 
 const router = express.Router();
+const uploadErrorMessage = 'Only JPG, PNG, or WebP images under 5MB allowed.';
+const allowedImageTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
+
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 10 * 1024 * 1024
+    fileSize: 5 * 1024 * 1024,
+    files: 1
+  },
+  fileFilter: (req, file, cb) => {
+    if (allowedImageTypes.has(file.mimetype)) {
+      cb(null, true);
+      return;
+    }
+
+    const error = new Error(uploadErrorMessage);
+    error.status = 400;
+    cb(error);
   }
 });
+
+const publicationValidators = [
+  body('url')
+    .optional({ checkFalsy: true })
+    .isURL()
+    .withMessage('url must be a valid URL'),
+  body('year')
+    .optional({ checkFalsy: true })
+    .isNumeric()
+    .withMessage('year must be numeric')
+    .isLength({ min: 4, max: 4 })
+    .withMessage('year must be 4 digits')
+];
+
+const mapMarkerValidators = [
+  body('lat')
+    .isFloat({ min: -90, max: 90 })
+    .withMessage('lat must be a valid latitude'),
+  body('lng')
+    .isFloat({ min: -180, max: 180 })
+    .withMessage('lng must be a valid longitude')
+];
+
+const contactItemValidators = [
+  body('url')
+    .optional({ checkFalsy: true })
+    .isURL()
+    .withMessage('url must be a valid URL')
+];
 
 function asyncHandler(handler) {
   return (req, res, next) => {
     Promise.resolve(handler(req, res, next)).catch(next);
+  };
+}
+
+function validateRequest(req, res, next) {
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  return next();
+}
+
+function escapeText(value) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
+function sanitizeValue(value, key = '') {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+
+    if (key === 'url' || key === 'filename') {
+      return trimmed;
+    }
+
+    return escapeText(trimmed);
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => sanitizeValue(item, key));
+  }
+
+  if (isObject(value)) {
+    return Object.fromEntries(
+      Object.entries(value).map(([childKey, item]) => [childKey, sanitizeValue(item, childKey)])
+    );
+  }
+
+  return value;
+}
+
+function sanitizeBody(req, res, next) {
+  if (req.body) {
+    req.body = sanitizeValue(req.body);
+  }
+
+  return next();
+}
+
+function singleImageUpload(fieldName) {
+  return (req, res, next) => {
+    upload.single(fieldName)(req, res, (error) => {
+      if (error) {
+        return res.status(400).json({ error: uploadErrorMessage });
+      }
+
+      return next();
+    });
   };
 }
 
@@ -74,12 +181,15 @@ function requireObjectBody(req, res) {
   return true;
 }
 
-function createArrayRoutes(routePath, dataKey) {
+function createArrayRoutes(routePath, dataKey, options = {}) {
+  const postValidators = options.postValidators || [];
+  const putValidators = options.putValidators || [];
+
   router.get(routePath, (req, res) => {
     return res.status(200).json(db.data[dataKey]);
   });
 
-  router.post(routePath, requireAuth, asyncHandler(async (req, res) => {
+  router.post(routePath, requireAuth, postValidators, validateRequest, sanitizeBody, asyncHandler(async (req, res) => {
     if (!requireObjectBody(req, res)) return;
 
     const entry = {
@@ -91,7 +201,7 @@ function createArrayRoutes(routePath, dataKey) {
     return saveAndRespond(res, 201, entry);
   }));
 
-  router.put(`${routePath}/:id`, requireAuth, asyncHandler(async (req, res) => {
+  router.put(`${routePath}/:id`, requireAuth, putValidators, validateRequest, sanitizeBody, asyncHandler(async (req, res) => {
     if (!requireObjectBody(req, res)) return;
 
     const items = db.data[dataKey];
@@ -122,8 +232,11 @@ function createArrayRoutes(routePath, dataKey) {
   }));
 }
 
-function createChildRoutes(routePath, itemsGetter, requiredFields, allowedFields) {
-  router.post(routePath, requireAuth, asyncHandler(async (req, res) => {
+function createChildRoutes(routePath, itemsGetter, requiredFields, allowedFields, options = {}) {
+  const postValidators = options.postValidators || [];
+  const putValidators = options.putValidators || [];
+
+  router.post(routePath, requireAuth, postValidators, validateRequest, sanitizeBody, asyncHandler(async (req, res) => {
     if (!requireObjectBody(req, res)) return;
 
     const missing = missingFields(req.body, requiredFields);
@@ -141,7 +254,7 @@ function createChildRoutes(routePath, itemsGetter, requiredFields, allowedFields
     return saveAndRespond(res, 201, entry);
   }));
 
-  router.put(`${routePath}/:id`, requireAuth, asyncHandler(async (req, res) => {
+  router.put(`${routePath}/:id`, requireAuth, putValidators, validateRequest, sanitizeBody, asyncHandler(async (req, res) => {
     if (!requireObjectBody(req, res)) return;
 
     const items = itemsGetter();
@@ -177,7 +290,7 @@ router.get('/hero', (req, res) => {
   return res.status(200).json(db.data.hero);
 });
 
-router.patch('/hero', requireAuth, asyncHandler(async (req, res) => {
+router.patch('/hero', requireAuth, sanitizeBody, asyncHandler(async (req, res) => {
   if (!requireObjectBody(req, res)) return;
 
   Object.assign(db.data.hero, pick(req.body, ['eyebrow', 'tagline']));
@@ -195,7 +308,7 @@ router.get('/about', (req, res) => {
   return res.status(200).json(db.data.about);
 });
 
-router.patch('/about', requireAuth, asyncHandler(async (req, res) => {
+router.patch('/about', requireAuth, sanitizeBody, asyncHandler(async (req, res) => {
   if (!requireObjectBody(req, res)) return;
 
   if (hasOwn(req.body, 'bio_paragraphs') && !Array.isArray(req.body.bio_paragraphs)) {
@@ -215,7 +328,10 @@ createChildRoutes(
 
 createArrayRoutes('/education', 'education');
 createArrayRoutes('/research', 'research');
-createArrayRoutes('/publications', 'publications');
+createArrayRoutes('/publications', 'publications', {
+  postValidators: publicationValidators,
+  putValidators: publicationValidators
+});
 createArrayRoutes('/conference', 'conference');
 createArrayRoutes('/field-cards', 'field_cards');
 
@@ -223,7 +339,7 @@ router.get('/map-markers', (req, res) => {
   return res.status(200).json(db.data.map_markers);
 });
 
-router.post('/map-markers', requireAuth, asyncHandler(async (req, res) => {
+router.post('/map-markers', requireAuth, mapMarkerValidators, validateRequest, sanitizeBody, asyncHandler(async (req, res) => {
   if (!requireObjectBody(req, res)) return;
 
   const missing = missingFields(req.body, ['lat', 'lng', 'title', 'desc']);
@@ -251,7 +367,7 @@ router.post('/map-markers', requireAuth, asyncHandler(async (req, res) => {
   return saveAndRespond(res, 201, marker);
 }));
 
-router.put('/map-markers/:id', requireAuth, asyncHandler(async (req, res) => {
+router.put('/map-markers/:id', requireAuth, mapMarkerValidators, validateRequest, sanitizeBody, asyncHandler(async (req, res) => {
   if (!requireObjectBody(req, res)) return;
 
   const index = findIndexById(db.data.map_markers, req.params.id);
@@ -299,7 +415,7 @@ router.get('/skills', (req, res) => {
   return res.status(200).json(db.data.skills);
 });
 
-router.put('/skills/groups/:id', requireAuth, asyncHandler(async (req, res) => {
+router.put('/skills/groups/:id', requireAuth, sanitizeBody, asyncHandler(async (req, res) => {
   if (!requireObjectBody(req, res)) return;
 
   const group = db.data.skills.groups.find((item) => item.id === req.params.id);
@@ -312,7 +428,7 @@ router.put('/skills/groups/:id', requireAuth, asyncHandler(async (req, res) => {
   return saveAndRespond(res, 200, group);
 }));
 
-router.post('/skills/groups/:id/items', requireAuth, asyncHandler(async (req, res) => {
+router.post('/skills/groups/:id/items', requireAuth, sanitizeBody, asyncHandler(async (req, res) => {
   if (!requireObjectBody(req, res)) return;
 
   if (!hasOwn(req.body, 'text')) {
@@ -364,13 +480,13 @@ router.get('/gallery', (req, res) => {
   return res.status(200).json(db.data.gallery);
 });
 
-router.post('/gallery/upload', requireAuth, upload.single('image'), asyncHandler(async (req, res) => {
+router.post('/gallery/upload', requireAuth, singleImageUpload('image'), sanitizeBody, asyncHandler(async (req, res) => {
   if (!req.file) {
     return badRequest(res, 'image file is required');
   }
 
   const id = makeId();
-  const filename = `gallery-${id}.jpg`;
+  const filename = sanitizeFileName(`gallery-${id}.jpg`);
   const filePath = path.join(publicImagesDir, filename);
 
   await fs.mkdir(publicImagesDir, { recursive: true });
@@ -390,7 +506,7 @@ router.post('/gallery/upload', requireAuth, upload.single('image'), asyncHandler
   });
 }));
 
-router.patch('/gallery/:id', requireAuth, asyncHandler(async (req, res) => {
+router.patch('/gallery/:id', requireAuth, sanitizeBody, asyncHandler(async (req, res) => {
   if (!requireObjectBody(req, res)) return;
 
   const item = db.data.gallery.find((entry) => entry.id === req.params.id);
@@ -425,13 +541,13 @@ router.delete('/gallery/:id', requireAuth, asyncHandler(async (req, res) => {
   return saveAndRespond(res, 200, { deleted: true, id: entry.id });
 }));
 
-router.post('/portrait/upload', requireAuth, upload.single('portrait'), asyncHandler(async (req, res) => {
+router.post('/portrait/upload', requireAuth, singleImageUpload('portrait'), asyncHandler(async (req, res) => {
   if (!req.file) {
     return badRequest(res, 'portrait file is required');
   }
 
   await fs.mkdir(publicImagesDir, { recursive: true });
-  await fs.writeFile(path.join(publicImagesDir, 'portrait.jpg'), req.file.buffer);
+  await fs.writeFile(path.join(publicImagesDir, sanitizeFileName('portrait.jpg')), req.file.buffer);
 
   return res.status(200).json({ url: '/images/portrait.jpg' });
 }));
@@ -440,7 +556,7 @@ router.get('/contact', (req, res) => {
   return res.status(200).json(db.data.contact);
 });
 
-router.patch('/contact', requireAuth, asyncHandler(async (req, res) => {
+router.patch('/contact', requireAuth, sanitizeBody, asyncHandler(async (req, res) => {
   if (!requireObjectBody(req, res)) return;
 
   Object.assign(db.data.contact, pick(req.body, ['title', 'subtitle']));
@@ -451,7 +567,10 @@ createChildRoutes(
   '/contact/items',
   () => db.data.contact.items,
   ['icon', 'label', 'value', 'url'],
-  ['icon', 'label', 'value', 'url']
+  ['icon', 'label', 'value', 'url'],
+  {
+    postValidators: contactItemValidators
+  }
 );
 
 export default router;

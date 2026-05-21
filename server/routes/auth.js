@@ -1,9 +1,38 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
+import { body, validationResult } from 'express-validator';
 
 const router = express.Router();
 
-router.post('/login', async (req, res, next) => {
+const loginValidation = [
+  body('email')
+    .isEmail()
+    .withMessage('A valid email is required')
+    .normalizeEmail({
+      gmail_remove_dots: false,
+      gmail_remove_subaddress: false,
+      outlookdotcom_remove_subaddress: false,
+      yahoo_remove_subaddress: false,
+      icloud_remove_subaddress: false
+    }),
+  body('password')
+    .notEmpty()
+    .withMessage('Password is required')
+    .isLength({ max: 128 })
+    .withMessage('Password must be 128 characters or fewer')
+];
+
+function validateRequest(req, res, next) {
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  return next();
+}
+
+router.post('/login', loginValidation, validateRequest, async (req, res, next) => {
   try {
     const { email, password } = req.body || {};
 

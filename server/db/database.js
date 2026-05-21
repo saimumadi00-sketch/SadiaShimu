@@ -13,6 +13,13 @@ export const contentFile = path.resolve(dataDir, 'content.json');
 export const publicDir = path.resolve(rootDir, 'public');
 export const publicImagesDir = path.resolve(publicDir, 'images');
 
+export function sanitizeFileName(filename) {
+  const safeName = path.basename(String(filename || ''))
+    .replace(/[^a-zA-Z0-9._-]/g, '');
+
+  return safeName || 'upload.jpg';
+}
+
 export const defaultContent = {
   hero: {
     eyebrow: 'Zoology · Primatology · Conservation',

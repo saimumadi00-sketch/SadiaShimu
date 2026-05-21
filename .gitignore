@@ -1,0 +1,6 @@
+node_modules/
+.env
+server/data/content.json
+public/images/portrait.jpg
+public/images/gallery-*.jpg
+*.log
