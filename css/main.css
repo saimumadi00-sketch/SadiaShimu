@@ -681,7 +681,12 @@ ul { list-style: none; }
   transition: var(--transition);
 }
 
-.pub-item:hover { background: rgba(45,90,61,0.02); margin: 0 -24px; padding: 32px 24px; border-radius: var(--radius); }
+.pub-item:hover {
+  background: rgba(45,90,61,0.02);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 28px rgba(26,31,24,0.06);
+  transform: translateY(-2px);
+}
 
 .pub-number {
   font-family: var(--font-mono);
@@ -1113,7 +1118,12 @@ ul { list-style: none; }
 /* ── RESPONSIVE ───────────────────────────────────────────── */
 @media (max-width: 1024px) {
   .hero-inner { grid-template-columns: 1fr; gap: 48px; }
-  .hero-portrait { display: none; }
+  .hero-portrait {
+    display: block;
+    width: 100%;
+    max-width: 320px;
+    margin: 0 auto;
+  }
   .about-grid { grid-template-columns: 1fr; }
   .research-grid { grid-template-columns: 1fr; }
   .research-card--featured { grid-column: span 1; }
