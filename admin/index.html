@@ -52,6 +52,16 @@
       display: none !important;
     }
 
+    .noscript-message {
+      margin: 24px;
+      padding: 16px 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #ffffff;
+      color: var(--danger);
+      font-weight: 700;
+    }
+
     .login-screen {
       min-height: 100vh;
       display: grid;
@@ -130,6 +140,7 @@
       color: rgba(255, 255, 255, 0.78);
       cursor: pointer;
       text-align: left;
+      -webkit-transition: background 0.2s ease, color 0.2s ease;
       transition: background 0.2s ease, color 0.2s ease;
     }
 
@@ -149,9 +160,11 @@
       align-items: center;
       justify-content: space-between;
       padding: 0 28px;
+      background: #ffffff;
       background: rgba(255, 255, 255, 0.92);
       border-bottom: 1px solid var(--line);
       backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
     }
 
     .editing-label {
@@ -168,8 +181,12 @@
     .topbar-actions {
       display: flex;
       align-items: center;
-      gap: 10px;
       flex-wrap: wrap;
+    }
+
+    .topbar-left > * + *,
+    .topbar-actions > * + * {
+      margin-left: 10px;
     }
 
     .unsaved-badge {
@@ -237,11 +254,20 @@
       border: 4px solid #d9e8dc;
       border-top-color: var(--forest-2);
       border-radius: 999px;
+      -webkit-animation: spin 0.8s linear infinite;
       animation: spin 0.8s linear infinite;
+    }
+
+    @-webkit-keyframes spin {
+      to {
+        -webkit-transform: rotate(360deg);
+        transform: rotate(360deg);
+      }
     }
 
     @keyframes spin {
       to {
+        -webkit-transform: rotate(360deg);
         transform: rotate(360deg);
       }
     }
@@ -328,6 +354,7 @@
       background: #ffffff;
       color: var(--text);
       outline: none;
+      -webkit-transition: border 0.2s ease, box-shadow 0.2s ease;
       transition: border 0.2s ease, box-shadow 0.2s ease;
     }
 
@@ -380,17 +407,17 @@
     .check-row {
       display: flex;
       align-items: center;
-      gap: 8px;
       margin: 8px 0 14px;
       color: var(--muted);
       font-size: 0.9rem;
     }
 
+    .check-row > * + * { margin-left: 8px; }
+
     .btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
       min-height: 38px;
       padding: 9px 14px;
       border-radius: 8px;
@@ -398,8 +425,11 @@
       color: var(--forest);
       cursor: pointer;
       font-weight: 700;
+      -webkit-transition: background 0.2s ease, transform 0.2s ease;
       transition: background 0.2s ease, transform 0.2s ease;
     }
+
+    .btn > * + * { margin-left: 8px; }
 
     .btn:hover {
       background: #e0eddf;
@@ -433,23 +463,26 @@
     .actions {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
       margin-top: 14px;
     }
+
+    .actions > * + * { margin-left: 8px; }
 
     .row-actions {
       display: flex;
       flex-wrap: wrap;
       justify-content: flex-end;
-      gap: 8px;
     }
+
+    .row-actions > * + * { margin-left: 8px; }
 
     .item-head {
       display: flex;
-      gap: 16px;
       justify-content: space-between;
       align-items: start;
     }
+
+    .item-head > * + * { margin-left: 16px; }
 
     .item-title {
       margin: 0;
@@ -534,12 +567,13 @@
     .skill-item {
       display: flex;
       justify-content: space-between;
-      gap: 10px;
       padding: 9px 0;
       border-bottom: 1px solid var(--line);
       color: #3f4d42;
       font-size: 0.9rem;
     }
+
+    .skill-item > * + * { margin-left: 10px; }
 
     .gallery-grid {
       display: grid;
@@ -592,6 +626,7 @@
       color: var(--muted);
       text-align: center;
       cursor: pointer;
+      -webkit-transition: border 0.2s ease, background 0.2s ease;
       transition: border 0.2s ease, background 0.2s ease;
     }
 
@@ -612,6 +647,7 @@
       width: 0;
       height: 100%;
       background: var(--forest-2);
+      -webkit-transition: width 0.2s ease;
       transition: width 0.2s ease;
     }
 
@@ -646,16 +682,19 @@
     }
 
     .toast {
+      -webkit-transform: translateX(120%);
       transform: translateX(120%);
       padding: 12px 14px;
       border-radius: 9px;
       box-shadow: var(--shadow);
       font-weight: 700;
+      -webkit-transition: transform 0.25s ease, opacity 0.25s ease;
       transition: transform 0.25s ease, opacity 0.25s ease;
       opacity: 0;
     }
 
     .toast.show {
+      -webkit-transform: translateX(0);
       transform: translateX(0);
       opacity: 1;
     }
@@ -739,9 +778,12 @@
         position: static;
         height: auto;
         align-items: start;
-        gap: 12px;
         padding: 18px;
         flex-direction: column;
+      }
+
+      .topbar > * + * {
+        margin-top: 12px;
       }
 
       .topbar-left,
@@ -815,6 +857,13 @@
         align-items: stretch;
       }
 
+      .item-head > * + *,
+      .row-actions > * + *,
+      .actions > * + * {
+        margin-left: 0;
+        margin-top: 8px;
+      }
+
       .row-actions .btn,
       .actions .btn {
         width: 100%;
@@ -829,6 +878,10 @@
   </style>
 </head>
 <body>
+  <noscript>
+    <div class="noscript-message">JavaScript is required to sign in and use the CMS admin dashboard.</div>
+  </noscript>
+
   <div id="login-screen" class="login-screen hidden">
     <form id="login-form" class="login-card">
       <h1>Portfolio CMS</h1>
@@ -927,12 +980,17 @@
     const modalRoot = document.getElementById('modal-root');
 
     function escapeHtml(value) {
-      return String(value ?? '')
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#039;');
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function padTwo(value) {
+      const text = String(value);
+      return text.length >= 2 ? text : '0' + text;
     }
 
     function formValue(form, name) {
@@ -1012,7 +1070,7 @@
     }
 
     function isSortableEndpoint(endpoint) {
-      return ['education', 'research', 'publications', 'gallery'].includes(endpoint);
+      return ['education', 'research', 'publications', 'gallery'].indexOf(endpoint) !== -1;
     }
 
     function bindSortableList(endpoint) {
@@ -2001,7 +2059,7 @@
           const id = form.dataset.entryId;
           const body = readEntryForm(form, fields);
           const current = id ? state.data.find((entry) => entry.id === id) : null;
-          body.number = current ? current.number : String(state.data.length + 1).padStart(2, '0');
+          body.number = current ? current.number : padTwo(state.data.length + 1);
           try {
             if (id) {
               await api('PUT', `/api/content/publications/${id}`, body);

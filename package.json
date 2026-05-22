@@ -6,6 +6,12 @@
     "start": "node server/server.js",
     "dev": "node --watch server/server.js"
   },
+  "browserslist": [
+    "> 0.5%",
+    "last 3 versions",
+    "Firefox ESR",
+    "not dead"
+  ],
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",

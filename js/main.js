@@ -243,7 +243,7 @@ document.addEventListener('DOMContentLoaded', function () {
       const res = await fetch('/api/content' + path);
       if (!res.ok) return null;
       return await res.json();
-    } catch {
+    } catch (error) {
       return null;
     }
   }
@@ -259,9 +259,9 @@ document.addEventListener('DOMContentLoaded', function () {
   function iconForBadge(badge) {
     const value = String(badge || '');
 
-    if (value.includes('MSc')) return 'fa-graduation-cap';
-    if (value.includes('BSc')) return 'fa-microscope';
-    if (value.includes('Higher')) return 'fa-school';
+    if (value.indexOf('MSc') !== -1) return 'fa-graduation-cap';
+    if (value.indexOf('BSc') !== -1) return 'fa-microscope';
+    if (value.indexOf('Higher') !== -1) return 'fa-school';
 
     return 'fa-book';
   }
@@ -543,7 +543,7 @@ document.addEventListener('DOMContentLoaded', function () {
       '/gallery', '/contact', '/map-markers'
     ];
 
-    const results = await Promise.allSettled(
+    const results = await Promise.all(
       endpoints.map(function (ep) {
         return cmsGet(ep);
       })
@@ -554,9 +554,7 @@ document.addEventListener('DOMContentLoaded', function () {
       publications, conference, fieldCards,
       skills, certificates, leadership,
       gallery, contact, mapMarkers
-    ] = results.map(function (result) {
-      return result.status === 'fulfilled' ? result.value : null;
-    });
+    ] = results;
 
     if (hero) renderHero(hero);
     if (about) renderAbout(about);
