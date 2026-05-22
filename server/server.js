@@ -11,8 +11,8 @@ import { initDb, rootDir } from './db/database.js';
 import { loadWriterAuth } from './db/writerAuth.js';
 
 const PORT = process.env.PORT || 3000;
-const WRITER_EMAIL = process.env.WRITER_EMAIL || 'saditto.adiya@gmail.com';
-const WRITER_PASSWORD = process.env.WRITER_PASSWORD || 'changeme123';
+const WRITER_EMAIL = process.env.WRITER_EMAIL || '';
+const WRITER_PASSWORD = process.env.WRITER_PASSWORD || '';
 const SESSION_SECRET = process.env.SESSION_SECRET || 'dev-secret-change-in-production';
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
