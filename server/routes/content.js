@@ -463,7 +463,7 @@ router.get('/map-markers', (req, res) => {
 router.post('/map-markers', requireAuth, mapMarkerValidators, validateRequest, sanitizeBody, asyncHandler(async (req, res) => {
   if (!requireObjectBody(req, res)) return;
 
-  const missing = missingFields(req.body, ['lat', 'lng', 'title', 'desc']);
+  const missing = missingFields(req.body, ['lat', 'lng', 'title']);
 
   if (missing.length > 0) {
     return badRequest(res, `Missing required fields: ${missing.join(', ')}`);
@@ -481,7 +481,7 @@ router.post('/map-markers', requireAuth, mapMarkerValidators, validateRequest, s
     lat,
     lng,
     title: req.body.title,
-    desc: req.body.desc
+    desc: req.body.desc || ''
   };
 
   db.data.map_markers.push(marker);

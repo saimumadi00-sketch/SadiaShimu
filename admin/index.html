@@ -834,6 +834,42 @@
       font-weight: 700;
     }
 
+    .inline-error {
+      min-height: 18px;
+      color: var(--danger);
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .lookup-status {
+      min-height: 18px;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .lookup-status.success {
+      color: var(--success);
+    }
+
+    .lookup-status.warning {
+      color: #8a5a00;
+    }
+
+    .lookup-status.loading::before {
+      content: '';
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      margin-right: 6px;
+      border: 2px solid #cfdccd;
+      border-top-color: var(--forest-2);
+      border-radius: 999px;
+      vertical-align: -1px;
+      -webkit-animation: spin 0.8s linear infinite;
+      animation: spin 0.8s linear infinite;
+    }
+
     .settings-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2238,6 +2274,120 @@
       bindGenericCrud('field-cards', fields);
     }
 
+    function decimalCoordinateText(marker) {
+      return marker ? `${marker.lat}, ${marker.lng}` : '';
+    }
+
+    function parseCoordinates(value) {
+      const text = String(value || '').trim();
+      const decimalMatch = text.match(/^([+-]?\d+(?:\.\d+)?)\s*,\s*([+-]?\d+(?:\.\d+)?)$/);
+
+      if (decimalMatch) {
+        return validCoordinates(Number(decimalMatch[1]), Number(decimalMatch[2]));
+      }
+
+      const dmsPattern = /(\d+(?:\.\d+)?)\s*(?:°|d)?\s*(\d+(?:\.\d+)?)?\s*(?:'|m|’)?\s*(\d+(?:\.\d+)?)?\s*(?:"|s|”)?\s*([NSEW])/gi;
+      const matches = [];
+      let match;
+
+      while ((match = dmsPattern.exec(text)) !== null) {
+        const degrees = Number(match[1]);
+        const minutes = Number(match[2] || 0);
+        const seconds = Number(match[3] || 0);
+        const direction = match[4].toUpperCase();
+        let decimal = degrees + (minutes / 60) + (seconds / 3600);
+        if (direction === 'S' || direction === 'W') decimal *= -1;
+        matches.push({ direction, decimal });
+      }
+
+      const latPart = matches.find((item) => item.direction === 'N' || item.direction === 'S');
+      const lngPart = matches.find((item) => item.direction === 'E' || item.direction === 'W');
+
+      if (latPart && lngPart) {
+        return validCoordinates(latPart.decimal, lngPart.decimal);
+      }
+
+      return null;
+    }
+
+    function validCoordinates(lat, lng) {
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+      if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+      return { lat, lng };
+    }
+
+    function markerFormHtml(marker = null) {
+      return `
+        <div class="field">
+          <label>Coordinates</label>
+          <input type="text" name="coordinates" value="${escapeHtml(decimalCoordinateText(marker))}" placeholder="23.7337, 90.3925" required />
+          <div class="lookup-status" data-lookup-status></div>
+          <div class="inline-error" data-coordinate-error></div>
+        </div>
+        <div class="field"><label>Title</label><input type="text" name="title" value="${escapeHtml(marker ? marker.title : '')}" required /></div>
+        <div class="field"><label>Description</label><textarea name="desc">${escapeHtml(marker ? marker.desc : '')}</textarea></div>
+      `;
+    }
+
+    function setCoordinateError(form, message) {
+      const error = form.querySelector('[data-coordinate-error]');
+      if (error) error.textContent = message || '';
+    }
+
+    function setLookupStatus(form, message, type = '') {
+      const status = form.querySelector('[data-lookup-status]');
+      if (!status) return;
+      status.className = `lookup-status ${type}`.trim();
+      status.textContent = message || '';
+    }
+
+    function bindCoordinateLookup(form) {
+      const input = form.querySelector('[name="coordinates"]');
+      if (!input || input.dataset.lookupBound === 'true') return;
+
+      input.dataset.lookupBound = 'true';
+      let timer = null;
+
+      const runLookup = () => {
+        clearTimeout(timer);
+        const coordinates = parseCoordinates(input.value);
+        setCoordinateError(form, '');
+
+        if (!coordinates) {
+          setLookupStatus(form, '');
+          return;
+        }
+
+        reverseLookupCoordinates(form, coordinates);
+      };
+
+      input.addEventListener('input', () => {
+        clearTimeout(timer);
+        timer = setTimeout(runLookup, 600);
+      });
+      input.addEventListener('blur', runLookup);
+    }
+
+    async function reverseLookupCoordinates(form, coordinates) {
+      setLookupStatus(form, 'Looking up location...', 'loading');
+
+      try {
+        const data = await api('GET', `/api/geocode/reverse?lat=${encodeURIComponent(coordinates.lat)}&lng=${encodeURIComponent(coordinates.lng)}`);
+        const displayName = data && data.display_name ? data.display_name : '';
+        const title = displayName.split(',').slice(0, 2).map((part) => part.trim()).filter(Boolean).join(', ');
+
+        if (!title) {
+          setLookupStatus(form, 'Could not detect name — enter manually', 'warning');
+          return;
+        }
+
+        form.querySelector('[name="title"]').value = title;
+        setLookupStatus(form, '✓ Location name detected', 'success');
+      } catch (error) {
+        setLookupStatus(form, 'Could not detect name — enter manually', 'warning');
+      }
+    }
+
     function renderMapMarkers() {
       const markers = state.data;
       panelBody.innerHTML = `
@@ -2247,21 +2397,19 @@
           </div>
           <form id="marker-form" class="form-card">
             <h3>Add Marker</h3>
-            <div class="field"><label>Title</label><input type="text" name="title" required /></div>
-            <div class="form-grid">
-              <div class="field"><label>Latitude</label><input type="number" step="any" name="lat" required /></div>
-              <div class="field"><label>Longitude</label><input type="number" step="any" name="lng" required /></div>
-            </div>
-            <div class="field"><label>Description</label><textarea name="desc" required></textarea></div>
+            ${markerFormHtml()}
             <button class="btn primary" type="submit">Add Marker</button>
           </form>
         </div>
       `;
 
+      bindCoordinateLookup(document.getElementById('marker-form'));
       document.getElementById('marker-form').addEventListener('submit', async (event) => {
         event.preventDefault();
+        const body = markerBody(event.currentTarget);
+        if (!body) return;
         try {
-          await api('POST', '/api/content/map-markers', markerBody(event.currentTarget));
+          await api('POST', '/api/content/map-markers', body);
           await reloadSection('Marker added');
         } catch (error) {
           showToast(error.message, 'error');
@@ -2271,10 +2419,19 @@
     }
 
     function markerBody(form) {
+      const coordinates = parseCoordinates(form.querySelector('[name="coordinates"]').value);
+
+      if (!coordinates) {
+        setCoordinateError(form, 'Invalid coordinates — use format: 23.7337, 90.3925');
+        return null;
+      }
+
+      setCoordinateError(form, '');
+
       return {
         title: form.querySelector('[name="title"]').value.trim(),
-        lat: Number(form.querySelector('[name="lat"]').value),
-        lng: Number(form.querySelector('[name="lng"]').value),
+        lat: coordinates.lat,
+        lng: coordinates.lng,
         desc: form.querySelector('[name="desc"]').value.trim()
       };
     }
@@ -2307,19 +2464,25 @@
           const row = button.closest('[data-marker-id]');
           const marker = state.data.find((item) => item.id === row.dataset.markerId);
           row.innerHTML = `
-            <td><input type="text" name="title" value="${escapeHtml(marker.title)}" /></td>
-            <td><input type="number" step="any" name="lat" value="${escapeHtml(marker.lat)}" /></td>
-            <td><input type="number" step="any" name="lng" value="${escapeHtml(marker.lng)}" /></td>
-            <td><input type="text" name="desc" value="${escapeHtml(marker.desc)}" /></td>
-            <td class="row-actions">
-              <button class="btn small primary" type="button" data-action="save-marker">Save</button>
-              <button class="btn small ghost" type="button" data-action="cancel-marker">Cancel</button>
+            <td colspan="5">
+              <form class="marker-edit-form">
+                ${markerFormHtml(marker)}
+                <div class="row-actions">
+                  <button class="btn small primary" type="submit">Save</button>
+                  <button class="btn small ghost" type="button" data-action="cancel-marker">Cancel</button>
+                </div>
+              </form>
             </td>
           `;
+          const form = row.querySelector('.marker-edit-form');
+          bindCoordinateLookup(form);
           row.querySelector('[data-action="cancel-marker"]').addEventListener('click', () => renderMapMarkers());
-          row.querySelector('[data-action="save-marker"]').addEventListener('click', async () => {
+          form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const body = markerBody(form);
+            if (!body) return;
             try {
-              await api('PUT', `/api/content/map-markers/${marker.id}`, markerBody(row));
+              await api('PUT', `/api/content/map-markers/${marker.id}`, body);
               await reloadSection('Marker saved');
             } catch (error) {
               showToast(error.message, 'error');

@@ -114,6 +114,43 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
+app.get('/api/geocode/reverse', async (req, res, next) => {
+  try {
+    const lat = Number(req.query.lat);
+    const lng = Number(req.query.lng);
+
+    if (!Number.isFinite(lat) || lat < -90 || lat > 90 ||
+        !Number.isFinite(lng) || lng < -180 || lng > 180) {
+      return res.status(400).json({ error: 'Valid lat and lng query parameters are required' });
+    }
+
+    const params = new URLSearchParams({
+      format: 'json',
+      lat: String(lat),
+      lon: String(lng)
+    });
+
+    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?${params.toString()}`, {
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'portfolio-cms/1.0'
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return res.status(response.status >= 500 ? 502 : response.status).json({
+        error: data && data.error ? data.error : 'Could not detect name'
+      });
+    }
+
+    return res.status(200).json(data);
+  } catch (error) {
+    return next(error);
+  }
+});
+
 app.use('/api', authRoutes);
 app.use('/api/content', contentRoutes);
 
