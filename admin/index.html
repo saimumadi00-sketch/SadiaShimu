@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Portfolio CMS Admin</title>
+  <link rel="stylesheet" href="https://unpkg.com/quill@2.0.3/dist/quill.snow.css" />
   <style>
     :root {
       --forest: #1e3d29;
@@ -321,6 +322,40 @@
       resize: vertical;
     }
 
+    textarea.rich-source {
+      display: none;
+    }
+
+    .rich-text-wrapper {
+      border: 1px solid #cedacd;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #ffffff;
+    }
+
+    .rich-text-wrapper:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(74, 124, 94, 0.14);
+    }
+
+    .rich-text-wrapper .ql-toolbar {
+      border: 0;
+      border-bottom: 1px solid #cedacd;
+      background: #f8fbf7;
+    }
+
+    .rich-text-wrapper .ql-container {
+      min-height: 128px;
+      border: 0;
+      font: inherit;
+    }
+
+    .rich-text-wrapper .ql-editor {
+      min-height: 128px;
+      font: inherit;
+      color: var(--text);
+    }
+
     input:focus,
     textarea:focus,
     select:focus {
@@ -575,6 +610,17 @@
       background: #e6eee5;
     }
 
+    .upload-preview {
+      display: block;
+      width: min(280px, 100%);
+      margin-top: 12px;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #e6eee5;
+    }
+
     .toast-stack {
       position: fixed;
       top: 18px;
@@ -763,6 +809,7 @@
   <div id="toast-stack" class="toast-stack"></div>
   <div id="modal-root"></div>
 
+  <script src="https://unpkg.com/quill@2.0.3/dist/quill.js"></script>
   <script>
     const sections = [
       { id: 'hero', label: 'Hero', subtitle: 'Edit the opening headline, tagline, and stats.' },
@@ -821,6 +868,74 @@
 
     function boolValue(form, name) {
       return form.elements[name] ? form.elements[name].checked : false;
+    }
+
+    const allowedImageTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
+    const maxClientImageSize = 2 * 1024 * 1024;
+
+    function validateImageFile(file) {
+      if (!file) return 'Please select an image file.';
+      if (!allowedImageTypes.has(file.type)) {
+        return 'Only JPG, PNG, or WebP images are allowed.';
+      }
+      if (file.size > maxClientImageSize) {
+        return 'Image must be 2MB or smaller.';
+      }
+      return '';
+    }
+
+    function showImagePreview(preview, file) {
+      if (!preview || !file) return;
+
+      if (preview.dataset.previewUrl) {
+        URL.revokeObjectURL(preview.dataset.previewUrl);
+      }
+
+      const url = URL.createObjectURL(file);
+      preview.dataset.previewUrl = url;
+      preview.src = url;
+      preview.classList.remove('hidden');
+    }
+
+    function richTextSelector() {
+      return 'textarea[name="paragraph"], textarea[name="description"], textarea[name="desc"]';
+    }
+
+    function enhanceRichTextEditors(scope = panelBody) {
+      if (!window.Quill) return;
+
+      scope.querySelectorAll(richTextSelector()).forEach((textarea) => {
+        if (textarea.dataset.richBound === 'true') return;
+
+        textarea.dataset.richBound = 'true';
+        textarea.classList.add('rich-source');
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'rich-text-wrapper';
+        const editor = document.createElement('div');
+        wrapper.appendChild(editor);
+        textarea.insertAdjacentElement('afterend', wrapper);
+
+        const quill = new Quill(editor, {
+          theme: 'snow',
+          modules: {
+            toolbar: [
+              ['bold', 'italic'],
+              [{ list: 'bullet' }],
+              ['link'],
+              ['clean']
+            ]
+          }
+        });
+
+        quill.setText(textarea.value || '');
+        textarea.richEditor = quill;
+
+        quill.on('text-change', () => {
+          textarea.value = quill.getText().trimEnd();
+          textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+      });
     }
 
     function showToast(message, type = 'success') {
@@ -1001,6 +1116,9 @@
           field.checked = Boolean(savedField.value);
         } else {
           field.value = savedField.value;
+          if (field.richEditor) {
+            field.richEditor.setText(savedField.value || '');
+          }
         }
 
         field.dispatchEvent(new Event('input', { bubbles: true }));
@@ -1104,6 +1222,7 @@
         showToast(error.message, 'error');
       } finally {
         hideSpinner();
+        enhanceRichTextEditors(panelBody);
         updateDraftControls();
       }
     }
@@ -1350,6 +1469,7 @@
       document.getElementById('add-paragraph').addEventListener('click', () => {
         const list = document.getElementById('bio-list');
         list.insertAdjacentHTML('beforeend', bioParagraphField('', list.querySelectorAll('textarea').length));
+        enhanceRichTextEditors(list);
       });
 
       document.getElementById('bio-form').addEventListener('submit', async (event) => {
@@ -1630,6 +1750,8 @@
           }
         });
       });
+
+      enhanceRichTextEditors(panelBody);
     }
 
     function checkboxFieldHtml(field, checked) {
@@ -1731,6 +1853,8 @@
           }
         });
       });
+
+      enhanceRichTextEditors(panelBody);
     }
 
     function renderPublications() {
@@ -2048,7 +2172,8 @@
                 <div>or click to select a file</div>
               </div>
             </div>
-            <input id="gallery-file" class="hidden" type="file" accept="image/*" />
+            <input id="gallery-file" class="hidden" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" />
+            <img id="gallery-preview" class="upload-preview hidden" alt="Selected gallery preview" />
             <div class="progress"><div id="gallery-progress" class="progress-bar"></div></div>
           </div>
           <div class="gallery-grid">
@@ -2059,6 +2184,7 @@
 
       const zone = document.getElementById('upload-zone');
       const fileInput = document.getElementById('gallery-file');
+      const preview = document.getElementById('gallery-preview');
       const progressBar = document.getElementById('gallery-progress');
 
       zone.addEventListener('click', () => fileInput.click());
@@ -2070,10 +2196,10 @@
       zone.addEventListener('drop', (event) => {
         event.preventDefault();
         zone.classList.remove('dragover');
-        if (event.dataTransfer.files[0]) uploadGalleryFile(event.dataTransfer.files[0], progressBar);
+        if (event.dataTransfer.files[0]) uploadGalleryFile(event.dataTransfer.files[0], progressBar, preview);
       });
       fileInput.addEventListener('change', () => {
-        if (fileInput.files[0]) uploadGalleryFile(fileInput.files[0], progressBar);
+        if (fileInput.files[0]) uploadGalleryFile(fileInput.files[0], progressBar, preview);
       });
 
       bindGalleryActions();
@@ -2093,7 +2219,14 @@
       `;
     }
 
-    async function uploadGalleryFile(file, progressBar) {
+    async function uploadGalleryFile(file, progressBar, preview) {
+      const validationError = validateImageFile(file);
+      if (validationError) {
+        showToast(validationError, 'error');
+        return;
+      }
+
+      showImagePreview(preview, file);
       const formData = new FormData();
       formData.append('image', file);
       progressBar.style.width = '0';
@@ -2161,7 +2294,7 @@
             <h3>Upload Portrait</h3>
             <div class="field">
               <label>Select Image</label>
-              <input id="portrait-file" type="file" accept="image/*" />
+              <input id="portrait-file" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" />
             </div>
             <img id="portrait-preview" class="portrait-preview hidden" alt="Portrait preview" />
             <div class="actions">
@@ -2184,8 +2317,17 @@
           return;
         }
 
-        preview.src = URL.createObjectURL(selectedFile);
-        preview.classList.remove('hidden');
+        const validationError = validateImageFile(selectedFile);
+        if (validationError) {
+          showToast(validationError, 'error');
+          selectedFile = null;
+          fileInput.value = '';
+          preview.classList.add('hidden');
+          uploadButton.disabled = true;
+          return;
+        }
+
+        showImagePreview(preview, selectedFile);
         uploadButton.disabled = false;
       });
 
