@@ -269,6 +269,20 @@
       margin-top: 12px;
     }
 
+    .sortable-list .card,
+    .sortable-list .gallery-card {
+      cursor: grab;
+      touch-action: manipulation;
+    }
+
+    .sortable-ghost {
+      opacity: 0.45;
+    }
+
+    .sortable-chosen {
+      box-shadow: var(--shadow);
+    }
+
     .form-card h3,
     .list-title {
       margin: 0 0 14px;
@@ -754,6 +768,64 @@
         grid-template-columns: 1fr;
       }
     }
+
+    @media (max-width: 430px) {
+      .login-card,
+      .form-card,
+      .card {
+        padding: 16px;
+      }
+
+      .sidebar {
+        padding: 16px 12px;
+      }
+
+      .nav-link,
+      .btn,
+      input[type="text"],
+      input[type="email"],
+      input[type="password"],
+      input[type="number"],
+      input[type="url"],
+      select {
+        min-height: 44px;
+      }
+
+      .main {
+        padding: 10px;
+      }
+
+      .panel-shell {
+        border-radius: 10px;
+      }
+
+      .panel-body,
+      .panel-header {
+        padding: 14px;
+      }
+
+      .section-grid {
+        gap: 16px;
+      }
+
+      .item-head,
+      .row-actions,
+      .actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .row-actions .btn,
+      .actions .btn {
+        width: 100%;
+      }
+
+      table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+    }
   </style>
 </head>
 <body>
@@ -810,6 +882,7 @@
   <div id="modal-root"></div>
 
   <script src="https://unpkg.com/quill@2.0.3/dist/quill.js"></script>
+  <script src="https://unpkg.com/sortablejs@1.15.2/Sortable.min.js"></script>
   <script>
     const sections = [
       { id: 'hero', label: 'Hero', subtitle: 'Edit the opening headline, tagline, and stats.' },
@@ -935,6 +1008,45 @@
           textarea.value = quill.getText().trimEnd();
           textarea.dispatchEvent(new Event('input', { bubbles: true }));
         });
+      });
+    }
+
+    function isSortableEndpoint(endpoint) {
+      return ['education', 'research', 'publications', 'gallery'].includes(endpoint);
+    }
+
+    function bindSortableList(endpoint) {
+      if (!window.Sortable || !isSortableEndpoint(endpoint)) return;
+
+      const container = endpoint === 'gallery'
+        ? panelBody.querySelector('#gallery-list')
+        : panelBody.querySelector(`#${endpoint}-list`);
+
+      if (!container || container.dataset.sortableBound === 'true') return;
+
+      container.dataset.sortableBound = 'true';
+
+      new Sortable(container, {
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        chosenClass: 'sortable-chosen',
+        onEnd: async () => {
+          const selector = endpoint === 'gallery' ? '[data-gallery-id]' : '[data-entry-id]';
+          const ids = Array.from(container.querySelectorAll(selector)).map((item) => (
+            endpoint === 'gallery' ? item.dataset.galleryId : item.dataset.entryId
+          ));
+
+          try {
+            const updated = await api('PATCH', `/api/content/${endpoint}/reorder`, { ids });
+            state.data = updated;
+            clearDraft(state.currentSection);
+            setUnsaved(false);
+            showToast('Order saved');
+          } catch (error) {
+            showToast(error.message, 'error');
+            await openSection(endpoint);
+          }
+        }
       });
     }
 
@@ -1584,7 +1696,7 @@
       const items = state.data;
       panelBody.innerHTML = `
         <div class="section-grid">
-          <div id="${endpoint}-list">
+          <div id="${endpoint}-list" class="${isSortableEndpoint(endpoint) ? 'sortable-list' : ''}">
             ${items.length ? items.map((entry) => renderGenericCard(endpoint, entry)).join('') : '<div class="empty">No entries yet.</div>'}
           </div>
           <div class="form-card">
@@ -1595,6 +1707,7 @@
       `;
 
       bindGenericCrud(endpoint, fields);
+      bindSortableList(endpoint);
     }
 
     function entryFormHtml(endpoint, fields, entry = null) {
@@ -1780,7 +1893,7 @@
       const textFields = fields.filter((field) => field.type !== 'checkbox');
       panelBody.innerHTML = `
         <div class="section-grid">
-          <div>
+          <div id="${endpoint}-list" class="${isSortableEndpoint(endpoint) ? 'sortable-list' : ''}">
             ${state.data.length ? state.data.map((entry) => renderGenericCard(endpoint, entry)).join('') : '<div class="empty">No entries yet.</div>'}
           </div>
           <div class="form-card">
@@ -1790,6 +1903,7 @@
         </div>
       `;
       bindCheckboxCrud(endpoint, fields, textFields);
+      bindSortableList(endpoint);
     }
 
     function checkboxEntryFormHtml(endpoint, fields, entry = null) {
@@ -1867,7 +1981,7 @@
       ];
       panelBody.innerHTML = `
         <div class="section-grid">
-          <div>
+          <div id="publications-list" class="sortable-list">
             ${state.data.length ? state.data.map((entry) => renderGenericCard('publications', entry)).join('') : '<div class="empty">No publications yet.</div>'}
           </div>
           <div class="form-card">
@@ -1877,6 +1991,7 @@
         </div>
       `;
       bindPublicationCrud(fields);
+      bindSortableList('publications');
     }
 
     function bindPublicationCrud(fields) {
@@ -2176,7 +2291,7 @@
             <img id="gallery-preview" class="upload-preview hidden" alt="Selected gallery preview" />
             <div class="progress"><div id="gallery-progress" class="progress-bar"></div></div>
           </div>
-          <div class="gallery-grid">
+          <div id="gallery-list" class="gallery-grid sortable-list">
             ${gallery.length ? gallery.map((item) => galleryCard(item)).join('') : '<div class="empty">No gallery images yet.</div>'}
           </div>
         </div>
@@ -2203,6 +2318,7 @@
       });
 
       bindGalleryActions();
+      bindSortableList('gallery');
     }
 
     function galleryCard(item) {
