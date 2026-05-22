@@ -37,6 +37,25 @@ document.addEventListener('DOMContentLoaded', function () {
 
   const navbar = document.getElementById('navbar');
 
+  (function initDarkMode() {
+    var btn = document.getElementById('dark-toggle');
+    if (!btn) return;
+
+    function applyTheme(dark) {
+      if (dark) {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+      }
+    }
+
+    btn.addEventListener('click', function () {
+      applyTheme(!document.documentElement.classList.contains('dark'));
+    });
+  })();
+
   window.addEventListener('scroll', function () {
     if (window.scrollY > 40) {
       navbar.classList.add('scrolled');
