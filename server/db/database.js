@@ -1,5 +1,6 @@
 import { Low } from 'lowdb';
 import { JSONFile } from 'lowdb/node';
+import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -340,13 +341,21 @@ export const defaultContent = {
       description: 'Field assistance, event logistics support, awareness workshop facilitation, and team collaboration in conservation and research events across Bangladesh.'
     }
   ],
-  gallery: [
-    { id: 'gal1', filename: 'gallery-1.jpg', caption: '[Caption]' },
-    { id: 'gal2', filename: 'gallery-2.jpg', caption: '[Caption]' },
-    { id: 'gal3', filename: 'gallery-3.jpg', caption: '[Caption]' },
-    { id: 'gal4', filename: 'gallery-4.jpg', caption: '[Caption]' },
-    { id: 'gal5', filename: 'gallery-5.jpg', caption: '[Caption]' },
-    { id: 'gal6', filename: 'gallery-6.jpg', caption: '[Caption]' }
+  albums: [
+    {
+      id: 'alb1',
+      name: 'Sundarbans Fieldwork 2024',
+      cover_filename: 'gallery-1.jpg',
+      created_at: '2024-01-01T00:00:00.000Z',
+      photos: [
+        { id: 'ph1', filename: 'gallery-1.jpg', caption: '' },
+        { id: 'ph2', filename: 'gallery-2.jpg', caption: '' },
+        { id: 'ph3', filename: 'gallery-3.jpg', caption: '' },
+        { id: 'ph4', filename: 'gallery-4.jpg', caption: '' },
+        { id: 'ph5', filename: 'gallery-5.jpg', caption: '' },
+        { id: 'ph6', filename: 'gallery-6.jpg', caption: '' }
+      ]
+    }
   ],
   contact: {
     title: 'Academic Inquiries & Collaboration',
@@ -404,11 +413,87 @@ function withDefaults(current, defaults) {
   return current === undefined ? defaults : current;
 }
 
+function normalizeAlbum(album) {
+  const photos = Array.isArray(album.photos) ? album.photos : [];
+  const cleanPhotos = photos
+    .filter((photo) => photo && typeof photo === 'object' && photo.filename)
+    .map((photo) => ({
+      id: photo.id || crypto.randomUUID(),
+      filename: photo.filename,
+      caption: typeof photo.caption === 'string' ? photo.caption : ''
+    }));
+
+  return {
+    id: album.id || crypto.randomUUID(),
+    name: typeof album.name === 'string' && album.name.trim() ? album.name : 'Untitled Album',
+    cover_filename: album.cover_filename || (cleanPhotos[0] ? cleanPhotos[0].filename : ''),
+    created_at: album.created_at || new Date().toISOString(),
+    photos: cleanPhotos
+  };
+}
+
+function migrateLegacyGallery(hadAlbums, legacyGallery) {
+  if (!Array.isArray(db.data.albums)) {
+    db.data.albums = [];
+  }
+
+  db.data.albums = db.data.albums.map(normalizeAlbum);
+
+  if (Array.isArray(legacyGallery) && legacyGallery.length > 0) {
+    const photos = legacyGallery
+      .filter((photo) => photo && typeof photo === 'object' && photo.filename)
+      .map((photo) => ({
+        id: photo.id || crypto.randomUUID(),
+        filename: photo.filename,
+        caption: typeof photo.caption === 'string' ? photo.caption : ''
+      }));
+
+    if (photos.length > 0) {
+      if (!hadAlbums) {
+        db.data.albums = [];
+      }
+
+      let generalAlbum = db.data.albums.find((album) => album.name === 'General');
+
+      if (!generalAlbum) {
+        generalAlbum = {
+          id: crypto.randomUUID(),
+          name: 'General',
+          cover_filename: photos[0].filename,
+          created_at: new Date().toISOString(),
+          photos: []
+        };
+        db.data.albums.unshift(generalAlbum);
+      }
+
+      const existingPhotoIds = new Set(generalAlbum.photos.map((photo) => photo.id));
+      photos.forEach((photo) => {
+        if (!existingPhotoIds.has(photo.id)) {
+          generalAlbum.photos.push(photo);
+        }
+      });
+
+      if (!generalAlbum.cover_filename && generalAlbum.photos[0]) {
+        generalAlbum.cover_filename = generalAlbum.photos[0].filename;
+      }
+    }
+  }
+
+  if (Object.prototype.hasOwnProperty.call(db.data, 'gallery')) {
+    delete db.data.gallery;
+  }
+}
+
 export async function initDb() {
   await fs.mkdir(dataDir, { recursive: true });
   await fs.mkdir(publicImagesDir, { recursive: true });
   await db.read();
+  const hadAlbums = Boolean(db.data && Array.isArray(db.data.albums));
+  const legacyGallery = db.data && Array.isArray(db.data.gallery)
+    ? db.data.gallery
+    : [];
   db.data = withDefaults(db.data, defaultContent);
+  migrateLegacyGallery(hadAlbums, legacyGallery);
   await db.write();
 }
 

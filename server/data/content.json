@@ -371,38 +371,6 @@
       "description": "Field assistance, event logistics support, awareness workshop facilitation, and team collaboration in conservation and research events across Bangladesh."
     }
   ],
-  "gallery": [
-    {
-      "id": "gal1",
-      "filename": "gallery-1.jpg",
-      "caption": "[Caption]"
-    },
-    {
-      "id": "gal2",
-      "filename": "gallery-2.jpg",
-      "caption": "[Caption]"
-    },
-    {
-      "id": "gal3",
-      "filename": "gallery-3.jpg",
-      "caption": "[Caption]"
-    },
-    {
-      "id": "gal4",
-      "filename": "gallery-4.jpg",
-      "caption": "[Caption]"
-    },
-    {
-      "id": "gal5",
-      "filename": "gallery-5.jpg",
-      "caption": "[Caption]"
-    },
-    {
-      "id": "gal6",
-      "filename": "gallery-6.jpg",
-      "caption": "[Caption]"
-    }
-  ],
   "contact": {
     "title": "Academic Inquiries & Collaboration",
     "subtitle": "For research collaboration, conservation education, publication records, or academic correspondence — reach out directly.",
@@ -429,5 +397,45 @@
         "url": "https://www.researchgate.net/profile/Mst-Sadia-Afrin-Shimu"
       }
     ]
-  }
+  },
+  "albums": [
+    {
+      "id": "77c9c32a-9931-4ad7-8117-d6c5690de401",
+      "name": "General",
+      "cover_filename": "gallery-1.jpg",
+      "created_at": "2026-05-22T09:54:47.710Z",
+      "photos": [
+        {
+          "id": "gal1",
+          "filename": "gallery-1.jpg",
+          "caption": "[Caption]"
+        },
+        {
+          "id": "gal2",
+          "filename": "gallery-2.jpg",
+          "caption": "[Caption]"
+        },
+        {
+          "id": "gal3",
+          "filename": "gallery-3.jpg",
+          "caption": "[Caption]"
+        },
+        {
+          "id": "gal4",
+          "filename": "gallery-4.jpg",
+          "caption": "[Caption]"
+        },
+        {
+          "id": "gal5",
+          "filename": "gallery-5.jpg",
+          "caption": "[Caption]"
+        },
+        {
+          "id": "gal6",
+          "filename": "gallery-6.jpg",
+          "caption": "[Caption]"
+        }
+      ]
+    }
+  ]
 }

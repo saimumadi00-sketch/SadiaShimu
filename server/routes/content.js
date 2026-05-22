@@ -181,6 +181,90 @@ function requireObjectBody(req, res) {
   return true;
 }
 
+function imageExtension(file) {
+  const byType = {
+    'image/jpeg': '.jpg',
+    'image/png': '.png',
+    'image/webp': '.webp'
+  };
+
+  return byType[file.mimetype] || path.extname(sanitizeFileName(file.originalname)) || '.jpg';
+}
+
+async function saveUploadedImage(file, prefix, id) {
+  const filename = sanitizeFileName(`${prefix}-${id}${imageExtension(file)}`);
+  const filePath = path.join(publicImagesDir, filename);
+
+  await fs.mkdir(publicImagesDir, { recursive: true });
+  await fs.writeFile(filePath, file.buffer);
+
+  return filename;
+}
+
+async function deleteImageFile(filename) {
+  if (!filename) return;
+
+  const imagePath = path.join(publicImagesDir, path.basename(filename));
+
+  try {
+    await fs.unlink(imagePath);
+  } catch (error) {
+    if (error.code !== 'ENOENT') {
+      throw error;
+    }
+  }
+}
+
+function getAlbums() {
+  if (!Array.isArray(db.data.albums)) {
+    db.data.albums = [];
+  }
+
+  db.data.albums.forEach((album) => {
+    if (!Array.isArray(album.photos)) {
+      album.photos = [];
+    }
+  });
+
+  return db.data.albums;
+}
+
+function findAlbum(albumId) {
+  return getAlbums().find((album) => album.id === albumId);
+}
+
+function albumPayload(album) {
+  const photos = Array.isArray(album.photos) ? album.photos : [];
+  const coverFilename = album.cover_filename || (photos[0] ? photos[0].filename : '');
+  const coverPhoto = photos.find((photo) => photo.filename === coverFilename) || null;
+
+  return {
+    ...album,
+    cover_filename: coverFilename,
+    photo_count: photos.length,
+    cover_photo: coverPhoto,
+    cover_url: coverFilename ? `/images/${coverFilename}` : null,
+    photos
+  };
+}
+
+function reorderByIds(items, ids, res) {
+  if (!Array.isArray(ids) || ids.length !== items.length) {
+    badRequest(res, 'ids must include every item exactly once');
+    return null;
+  }
+
+  const byId = new Map(items.map((item) => [item.id, item]));
+  const uniqueIds = new Set(ids);
+
+  if (uniqueIds.size !== ids.length || ids.some((id) => !byId.has(id))) {
+    badRequest(res, 'ids must include every item exactly once');
+    return null;
+  }
+
+  return ids.map((id) => byId.get(id));
+}
+
 function createArrayRoutes(routePath, dataKey, options = {}) {
   const postValidators = options.postValidators || [];
   const putValidators = options.putValidators || [];
@@ -513,72 +597,184 @@ router.delete('/skills/groups/:id/items/:itemIndex', requireAuth, asyncHandler(a
 createArrayRoutes('/certificates', 'certificates');
 createArrayRoutes('/leadership', 'leadership');
 
-router.get('/gallery', (req, res) => {
-  return res.status(200).json(db.data.gallery);
+router.get('/albums', (req, res) => {
+  return res.status(200).json(getAlbums().map(albumPayload));
 });
 
-createReorderRoute('/gallery', 'gallery');
+router.post('/albums', requireAuth, singleImageUpload('cover'), sanitizeBody, asyncHandler(async (req, res) => {
+  if (!requireObjectBody(req, res)) return;
 
-router.post('/gallery/upload', requireAuth, singleImageUpload('image'), sanitizeBody, asyncHandler(async (req, res) => {
+  if (!req.body.name) {
+    return badRequest(res, 'Missing required fields: name');
+  }
+
+  const id = makeId();
+  const album = {
+    id,
+    name: req.body.name,
+    cover_filename: '',
+    created_at: new Date().toISOString(),
+    photos: []
+  };
+
+  if (req.file) {
+    album.cover_filename = await saveUploadedImage(req.file, 'album-cover', id);
+  }
+
+  getAlbums().push(album);
+  return saveAndRespond(res, 201, albumPayload(album));
+}));
+
+router.post('/albums/reorder', requireAuth, asyncHandler(async (req, res) => {
+  if (!requireObjectBody(req, res)) return;
+
+  const reordered = reorderByIds(getAlbums(), req.body.ids, res);
+  if (!reordered) return;
+
+  db.data.albums = reordered;
+  return saveAndRespond(res, 200, db.data.albums.map(albumPayload));
+}));
+
+router.patch('/albums/:albumId', requireAuth, singleImageUpload('cover'), sanitizeBody, asyncHandler(async (req, res) => {
+  const album = findAlbum(req.params.albumId);
+
+  if (!album) {
+    return notFound(res, 'Album not found');
+  }
+
+  if (req.body && hasOwn(req.body, 'name')) {
+    album.name = req.body.name;
+  }
+
+  if (req.body && hasOwn(req.body, 'cover_filename')) {
+    album.cover_filename = req.body.cover_filename;
+  }
+
+  if (req.file) {
+    album.cover_filename = await saveUploadedImage(req.file, 'album-cover', album.id);
+  }
+
+  if (!album.cover_filename && album.photos[0]) {
+    album.cover_filename = album.photos[0].filename;
+  }
+
+  return saveAndRespond(res, 200, albumPayload(album));
+}));
+
+router.delete('/albums/:albumId', requireAuth, asyncHandler(async (req, res) => {
+  const albums = getAlbums();
+  const index = findIndexById(albums, req.params.albumId);
+
+  if (index === -1) {
+    return notFound(res, 'Album not found');
+  }
+
+  const [album] = albums.splice(index, 1);
+  const filenames = new Set(album.photos.map((photo) => photo.filename));
+  if (album.cover_filename) {
+    filenames.add(album.cover_filename);
+  }
+
+  for (const filename of filenames) {
+    await deleteImageFile(filename);
+  }
+
+  return saveAndRespond(res, 200, { deleted: true, id: album.id });
+}));
+
+router.post('/albums/:albumId/photos', requireAuth, singleImageUpload('image'), sanitizeBody, asyncHandler(async (req, res) => {
+  const album = findAlbum(req.params.albumId);
+
+  if (!album) {
+    return notFound(res, 'Album not found');
+  }
+
   if (!req.file) {
     return badRequest(res, 'image file is required');
   }
 
   const id = makeId();
-  const filename = sanitizeFileName(`gallery-${id}.jpg`);
-  const filePath = path.join(publicImagesDir, filename);
-
-  await fs.mkdir(publicImagesDir, { recursive: true });
-  await fs.writeFile(filePath, req.file.buffer);
-
-  const entry = {
+  const filename = await saveUploadedImage(req.file, 'gallery', id);
+  const photo = {
     id,
     filename,
     caption: req.body && req.body.caption ? req.body.caption : ''
   };
 
-  db.data.gallery.push(entry);
+  album.photos.push(photo);
+
+  if (!album.cover_filename) {
+    album.cover_filename = filename;
+  }
 
   return saveAndRespond(res, 201, {
-    ...entry,
+    ...photo,
     url: `/images/${filename}`
   });
 }));
 
-router.patch('/gallery/:id', requireAuth, sanitizeBody, asyncHandler(async (req, res) => {
+router.patch('/albums/:albumId/photos/:photoId', requireAuth, sanitizeBody, asyncHandler(async (req, res) => {
   if (!requireObjectBody(req, res)) return;
 
-  const item = db.data.gallery.find((entry) => entry.id === req.params.id);
+  const album = findAlbum(req.params.albumId);
 
-  if (!item) {
-    return notFound(res);
+  if (!album) {
+    return notFound(res, 'Album not found');
   }
 
-  Object.assign(item, pick(req.body, ['caption']));
-  return saveAndRespond(res, 200, item);
+  const photo = album.photos.find((entry) => entry.id === req.params.photoId);
+
+  if (!photo) {
+    return notFound(res, 'Photo not found');
+  }
+
+  Object.assign(photo, pick(req.body, ['caption']));
+  return saveAndRespond(res, 200, photo);
 }));
 
-router.delete('/gallery/:id', requireAuth, asyncHandler(async (req, res) => {
-  const index = findIndexById(db.data.gallery, req.params.id);
+router.delete('/albums/:albumId/photos/:photoId', requireAuth, asyncHandler(async (req, res) => {
+  const album = findAlbum(req.params.albumId);
+
+  if (!album) {
+    return notFound(res, 'Album not found');
+  }
+
+  const index = findIndexById(album.photos, req.params.photoId);
 
   if (index === -1) {
-    return notFound(res);
+    return notFound(res, 'Photo not found');
   }
 
-  const entry = db.data.gallery[index];
-  const imagePath = path.join(publicImagesDir, path.basename(entry.filename));
+  const [photo] = album.photos.splice(index, 1);
+  await deleteImageFile(photo.filename);
 
-  try {
-    await fs.unlink(imagePath);
-  } catch (error) {
-    if (error.code !== 'ENOENT') {
-      throw error;
-    }
+  if (album.cover_filename === photo.filename) {
+    album.cover_filename = album.photos[0] ? album.photos[0].filename : '';
   }
 
-  db.data.gallery.splice(index, 1);
-  return saveAndRespond(res, 200, { deleted: true, id: entry.id });
+  return saveAndRespond(res, 200, { deleted: true, id: photo.id });
 }));
+
+router.post('/albums/:albumId/reorder', requireAuth, asyncHandler(async (req, res) => {
+  if (!requireObjectBody(req, res)) return;
+
+  const album = findAlbum(req.params.albumId);
+
+  if (!album) {
+    return notFound(res, 'Album not found');
+  }
+
+  const reordered = reorderByIds(album.photos, req.body.ids, res);
+  if (!reordered) return;
+
+  album.photos = reordered;
+  return saveAndRespond(res, 200, albumPayload(album));
+}));
+
+router.get('/gallery', (req, res) => {
+  const photos = getAlbums().flatMap((album) => album.photos);
+  return res.status(200).json(photos);
+});
 
 router.post('/portrait/upload', requireAuth, singleImageUpload('portrait'), asyncHandler(async (req, res) => {
   if (!req.file) {

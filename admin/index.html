@@ -615,6 +615,94 @@
       padding: 12px;
     }
 
+    .album-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .album-photo-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .album-card {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #ffffff;
+    }
+
+    .album-cover-button {
+      width: 100%;
+      padding: 0;
+      background: transparent;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .album-cover {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      background: #e6eee5;
+    }
+
+    .album-body {
+      padding: 14px;
+    }
+
+    .album-title-button {
+      padding: 0;
+      background: transparent;
+      color: var(--forest);
+      cursor: pointer;
+      font-weight: 800;
+      text-align: left;
+    }
+
+    .album-editor-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 18px;
+    }
+
+    .album-heading-input {
+      max-width: 560px;
+      color: var(--forest);
+      font-size: 1.35rem;
+      font-weight: 800;
+    }
+
+    .upload-queue {
+      margin-top: 16px;
+    }
+
+    .queue-item {
+      padding: 10px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .queue-meta {
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 18px;
+    }
+
+    .pagination > * + * {
+      margin-left: 12px;
+    }
+
     .upload-zone {
       display: grid;
       place-items: center;
@@ -757,6 +845,15 @@
       .section-grid,
       .skills-grid,
       .field-card-grid,
+      .gallery-grid,
+      .album-grid,
+      .album-photo-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .section-grid,
+      .skills-grid,
+      .field-card-grid,
       .gallery-grid {
         grid-template-columns: 1fr;
       }
@@ -874,6 +971,11 @@
         overflow-x: auto;
         white-space: nowrap;
       }
+
+      .album-grid,
+      .album-photo-grid {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
@@ -960,7 +1062,9 @@
       currentSection: 'hero',
       data: null,
       cacheBust: Date.now(),
-      unsaved: false
+      unsaved: false,
+      galleryAlbumId: null,
+      galleryPage: 1
     };
 
     const loginScreen = document.getElementById('login-screen');
@@ -1070,15 +1174,13 @@
     }
 
     function isSortableEndpoint(endpoint) {
-      return ['education', 'research', 'publications', 'gallery'].indexOf(endpoint) !== -1;
+      return ['education', 'research', 'publications'].indexOf(endpoint) !== -1;
     }
 
     function bindSortableList(endpoint) {
       if (!window.Sortable || !isSortableEndpoint(endpoint)) return;
 
-      const container = endpoint === 'gallery'
-        ? panelBody.querySelector('#gallery-list')
-        : panelBody.querySelector(`#${endpoint}-list`);
+      const container = panelBody.querySelector(`#${endpoint}-list`);
 
       if (!container || container.dataset.sortableBound === 'true') return;
 
@@ -1089,10 +1191,7 @@
         ghostClass: 'sortable-ghost',
         chosenClass: 'sortable-chosen',
         onEnd: async () => {
-          const selector = endpoint === 'gallery' ? '[data-gallery-id]' : '[data-entry-id]';
-          const ids = Array.from(container.querySelectorAll(selector)).map((item) => (
-            endpoint === 'gallery' ? item.dataset.galleryId : item.dataset.entryId
-          ));
+          const ids = Array.from(container.querySelectorAll('[data-entry-id]')).map((item) => item.dataset.entryId);
 
           try {
             const updated = await api('PATCH', `/api/content/${endpoint}/reorder`, { ids });
@@ -1356,7 +1455,13 @@
       `).join('');
 
       navList.querySelectorAll('[data-section]').forEach((button) => {
-        button.addEventListener('click', () => openSection(button.dataset.section));
+        button.addEventListener('click', () => {
+          if (button.dataset.section === 'gallery') {
+            state.galleryAlbumId = null;
+            state.galleryPage = 1;
+          }
+          openSection(button.dataset.section);
+        });
       });
     }
 
@@ -1385,7 +1490,7 @@
           return;
         }
 
-        state.data = await api('GET', `/api/content/${id}`);
+        state.data = await api('GET', `/api/content/${id === 'gallery' ? 'albums' : id}`);
         renderCurrentPanel();
       } catch (error) {
         panelBody.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`;
@@ -2376,7 +2481,6 @@
       });
 
       bindGalleryActions();
-      bindSortableList('gallery');
     }
 
     function galleryCard(item) {
@@ -2405,7 +2509,9 @@
       formData.append('image', file);
       progressBar.style.width = '0';
       try {
-        await uploadWithProgress('/api/content/gallery/upload', formData, progressBar);
+        const album = currentAlbum();
+        if (!album) return;
+        await uploadWithProgress(`/api/content/albums/${album.id}/photos`, formData, progressBar);
         state.cacheBust = Date.now();
         await reloadSection('Image uploaded');
       } catch (error) {
@@ -2419,7 +2525,9 @@
           const id = button.closest('[data-gallery-id]').dataset.galleryId;
           if (!(await confirmDelete('Delete this image?'))) return;
           try {
-            await api('DELETE', `/api/content/gallery/${id}`);
+            const album = currentAlbum();
+            if (!album) return;
+            await api('DELETE', `/api/content/albums/${album.id}/photos/${id}`);
             await reloadSection('Image deleted');
           } catch (error) {
             showToast(error.message, 'error');
@@ -2445,7 +2553,9 @@
           caption.querySelector('[data-action="cancel-caption"]').addEventListener('click', () => renderGallery());
           caption.querySelector('[data-action="save-caption"]').addEventListener('click', async () => {
             try {
-              await api('PATCH', `/api/content/gallery/${item.id}`, {
+              const album = currentAlbum();
+              if (!album) return;
+              await api('PATCH', `/api/content/albums/${album.id}/photos/${item.id}`, {
                 caption: caption.querySelector('[name="caption"]').value.trim()
               });
               await reloadSection('Caption saved');
@@ -2454,6 +2564,465 @@
             }
           });
         });
+      });
+    }
+
+    function renderGallery() {
+      const album = currentAlbum();
+
+      if (state.galleryAlbumId && album) {
+        renderAlbumEditor(album);
+        return;
+      }
+
+      state.galleryAlbumId = null;
+      state.galleryPage = 1;
+      renderAlbumList();
+    }
+
+    function currentAlbum() {
+      const albums = Array.isArray(state.data) ? state.data : [];
+      return albums.find((album) => album.id === state.galleryAlbumId);
+    }
+
+    function albumCoverUrl(album) {
+      const filename = album && album.cover_filename
+        ? album.cover_filename
+        : album && album.photos && album.photos[0]
+          ? album.photos[0].filename
+          : '';
+
+      return filename
+        ? `/images/${encodeURIComponent(filename)}?v=${state.cacheBust}`
+        : 'https://placehold.co/900x600/e6eee5/1e3d29?text=Album';
+    }
+
+    function photoCountLabel(count) {
+      return `${count} ${count === 1 ? 'photo' : 'photos'}`;
+    }
+
+    async function refreshAlbums() {
+      state.data = await api('GET', '/api/content/albums');
+    }
+
+    function renderAlbumList() {
+      const albums = Array.isArray(state.data) ? state.data : [];
+      panelBody.innerHTML = `
+        <div class="section-grid wide">
+          <form id="album-create-form" class="form-card">
+            <h3>Create Album</h3>
+            <div class="form-grid">
+              <div class="field">
+                <label>Album Name</label>
+                <input type="text" name="name" required />
+              </div>
+              <div class="field">
+                <label>Optional Cover Photo</label>
+                <input type="file" name="cover" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" />
+              </div>
+            </div>
+            <button class="btn primary" type="submit">Save Album</button>
+          </form>
+          <div id="album-list" class="album-grid sortable-list">
+            ${albums.length ? albums.map((album) => albumCard(album)).join('') : '<div class="empty">No albums yet.</div>'}
+          </div>
+        </div>
+      `;
+
+      document.getElementById('album-create-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const cover = form.elements.cover.files[0] || null;
+        const formData = new FormData();
+        formData.append('name', formValue(form, 'name'));
+
+        if (cover) {
+          const validationError = validateImageFile(cover);
+          if (validationError) {
+            showToast(validationError, 'error');
+            return;
+          }
+          formData.append('cover', cover);
+        }
+
+        try {
+          await api('POST', '/api/content/albums', formData);
+          await reloadSection('Album created');
+        } catch (error) {
+          showToast(error.message, 'error');
+        }
+      });
+
+      bindAlbumListActions();
+      bindAlbumSorting();
+    }
+
+    function albumCard(album) {
+      const count = album.photo_count || (album.photos ? album.photos.length : 0);
+      return `
+        <div class="album-card" data-album-id="${escapeHtml(album.id)}">
+          <button class="album-cover-button" type="button" data-action="open-album" aria-label="Open ${escapeHtml(album.name)}">
+            <img class="album-cover" src="${albumCoverUrl(album)}" alt="${escapeHtml(album.name)} cover" onerror="this.onerror=null;this.src='https://placehold.co/900x600/e6eee5/1e3d29?text=Album';" />
+          </button>
+          <div class="album-body">
+            <button class="album-title-button" type="button" data-action="open-album">${escapeHtml(album.name)}</button>
+            <p class="item-meta">${photoCountLabel(count)}</p>
+            <div class="actions">
+              <button class="btn small" type="button" data-action="rename-album">Rename</button>
+              <button class="btn small" type="button" data-action="set-album-cover">Set Cover</button>
+              <button class="btn small danger" type="button" data-action="delete-album">Delete</button>
+            </div>
+            <input class="hidden" type="file" data-cover-input accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" />
+          </div>
+        </div>
+      `;
+    }
+
+    function bindAlbumListActions() {
+      panelBody.querySelectorAll('[data-action="open-album"]').forEach((button) => {
+        button.addEventListener('click', () => {
+          state.galleryAlbumId = button.closest('[data-album-id]').dataset.albumId;
+          state.galleryPage = 1;
+          renderGallery();
+        });
+      });
+
+      panelBody.querySelectorAll('[data-action="rename-album"]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const card = button.closest('[data-album-id]');
+          const album = state.data.find((item) => item.id === card.dataset.albumId);
+          const body = card.querySelector('.album-body');
+          body.innerHTML = `
+            <div class="field">
+              <label>Album Name</label>
+              <input type="text" name="name" value="${escapeHtml(album.name)}" required />
+            </div>
+            <div class="actions">
+              <button class="btn small primary" type="button" data-action="save-album-rename">Save</button>
+              <button class="btn small ghost" type="button" data-action="cancel-album-rename">Cancel</button>
+            </div>
+          `;
+          body.querySelector('[data-action="cancel-album-rename"]').addEventListener('click', renderAlbumList);
+          body.querySelector('[data-action="save-album-rename"]').addEventListener('click', async () => {
+            try {
+              await api('PATCH', `/api/content/albums/${album.id}`, {
+                name: body.querySelector('[name="name"]').value.trim()
+              });
+              await reloadSection('Album renamed');
+            } catch (error) {
+              showToast(error.message, 'error');
+            }
+          });
+        });
+      });
+
+      panelBody.querySelectorAll('[data-action="set-album-cover"]').forEach((button) => {
+        button.addEventListener('click', () => {
+          button.closest('[data-album-id]').querySelector('[data-cover-input]').click();
+        });
+      });
+
+      panelBody.querySelectorAll('[data-cover-input]').forEach((input) => {
+        input.addEventListener('change', async () => {
+          const file = input.files[0] || null;
+          if (!file) return;
+          const validationError = validateImageFile(file);
+          if (validationError) {
+            showToast(validationError, 'error');
+            input.value = '';
+            return;
+          }
+
+          const albumId = input.closest('[data-album-id]').dataset.albumId;
+          const formData = new FormData();
+          formData.append('cover', file);
+          try {
+            await api('PATCH', `/api/content/albums/${albumId}`, formData);
+            state.cacheBust = Date.now();
+            await reloadSection('Album cover updated');
+          } catch (error) {
+            showToast(error.message, 'error');
+          }
+        });
+      });
+
+      panelBody.querySelectorAll('[data-action="delete-album"]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          const albumId = button.closest('[data-album-id]').dataset.albumId;
+          if (!(await confirmDelete('Delete this album and all photos?'))) return;
+          try {
+            await api('DELETE', `/api/content/albums/${albumId}`);
+            await reloadSection('Album deleted');
+          } catch (error) {
+            showToast(error.message, 'error');
+          }
+        });
+      });
+    }
+
+    function bindAlbumSorting() {
+      const container = panelBody.querySelector('#album-list');
+      if (!window.Sortable || !container || container.dataset.sortableBound === 'true') return;
+
+      container.dataset.sortableBound = 'true';
+      new Sortable(container, {
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        chosenClass: 'sortable-chosen',
+        onEnd: async () => {
+          const ids = Array.from(container.querySelectorAll('[data-album-id]')).map((item) => item.dataset.albumId);
+          try {
+            state.data = await api('POST', '/api/content/albums/reorder', { ids });
+            showToast('Album order saved');
+          } catch (error) {
+            showToast(error.message, 'error');
+            await reloadSection();
+          }
+        }
+      });
+    }
+
+    function renderAlbumEditor(album) {
+      const photos = Array.isArray(album.photos) ? album.photos : [];
+      const totalPages = Math.max(1, Math.ceil(photos.length / 24));
+      state.galleryPage = Math.min(Math.max(1, state.galleryPage), totalPages);
+      const start = (state.galleryPage - 1) * 24;
+      const pagePhotos = photos.slice(start, start + 24);
+
+      panelBody.innerHTML = `
+        <div class="album-editor-header">
+          <button class="btn ghost" type="button" id="album-back-button">Back</button>
+          <div class="row-actions">
+            <button class="btn" type="button" id="album-save-heading">Save Name</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Album Name</label>
+          <input id="album-heading-input" class="album-heading-input" type="text" value="${escapeHtml(album.name)}" />
+        </div>
+        <div class="form-card">
+          <h3>Bulk Upload</h3>
+          <div id="album-upload-zone" class="upload-zone">
+            <div>
+              <strong>Drop up to 50 images here</strong>
+              <div>or click to select files</div>
+            </div>
+          </div>
+          <input id="album-files" class="hidden" type="file" multiple accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" />
+          <p id="upload-counter" class="item-meta">0 of 0 uploaded</p>
+          <div id="upload-queue" class="upload-queue"></div>
+        </div>
+        <h3 class="list-title" style="margin-top: 24px;">Photos</h3>
+        <div id="album-photo-list" class="album-photo-grid sortable-list">
+          ${pagePhotos.length ? pagePhotos.map((photo) => albumPhotoCard(photo)).join('') : '<div class="empty">No photos in this album yet.</div>'}
+        </div>
+        <div class="pagination">
+          <button class="btn small" type="button" id="album-prev-page" ${state.galleryPage <= 1 ? 'disabled' : ''}>Previous</button>
+          <span class="item-meta">Page ${state.galleryPage} of ${totalPages}</span>
+          <button class="btn small" type="button" id="album-next-page" ${state.galleryPage >= totalPages ? 'disabled' : ''}>Next</button>
+        </div>
+      `;
+
+      document.getElementById('album-back-button').addEventListener('click', () => {
+        state.galleryAlbumId = null;
+        state.galleryPage = 1;
+        renderGallery();
+      });
+
+      document.getElementById('album-save-heading').addEventListener('click', () => saveAlbumHeading(album.id));
+      document.getElementById('album-heading-input').addEventListener('blur', () => saveAlbumHeading(album.id));
+      document.getElementById('album-prev-page').addEventListener('click', () => {
+        state.galleryPage -= 1;
+        renderGallery();
+      });
+      document.getElementById('album-next-page').addEventListener('click', () => {
+        state.galleryPage += 1;
+        renderGallery();
+      });
+
+      bindAlbumUpload(album.id);
+      bindAlbumPhotoActions(album);
+      bindAlbumPhotoSorting(album, start);
+    }
+
+    function albumPhotoCard(photo) {
+      const url = `/images/${encodeURIComponent(photo.filename)}?v=${state.cacheBust}`;
+      return `
+        <div class="gallery-card" data-photo-id="${escapeHtml(photo.id)}">
+          <button class="gallery-delete" type="button" aria-label="Delete photo" data-action="delete-photo">×</button>
+          <img src="${url}" alt="${escapeHtml(photo.caption || photo.filename)}" onerror="this.onerror=null;this.src='https://placehold.co/900x600/e6eee5/1e3d29?text=Photo';" />
+          <div class="gallery-caption">
+            <div class="field">
+              <label>Caption</label>
+              <input type="text" name="caption" value="${escapeHtml(photo.caption || '')}" data-action="save-photo-caption" />
+            </div>
+            <button class="btn small" type="button" data-action="set-photo-cover">Set Cover</button>
+          </div>
+        </div>
+      `;
+    }
+
+    async function saveAlbumHeading(albumId) {
+      const input = document.getElementById('album-heading-input');
+      if (!input) return;
+
+      try {
+        await api('PATCH', `/api/content/albums/${albumId}`, { name: input.value.trim() });
+        await refreshAlbums();
+        showToast('Album name saved');
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    }
+
+    function bindAlbumUpload(albumId) {
+      const zone = document.getElementById('album-upload-zone');
+      const fileInput = document.getElementById('album-files');
+
+      zone.addEventListener('click', () => fileInput.click());
+      zone.addEventListener('dragover', (event) => {
+        event.preventDefault();
+        zone.classList.add('dragover');
+      });
+      zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+      zone.addEventListener('drop', (event) => {
+        event.preventDefault();
+        zone.classList.remove('dragover');
+        uploadAlbumFiles(albumId, Array.from(event.dataTransfer.files || []));
+      });
+      fileInput.addEventListener('change', () => uploadAlbumFiles(albumId, Array.from(fileInput.files || [])));
+    }
+
+    async function uploadAlbumFiles(albumId, files) {
+      const queue = document.getElementById('upload-queue');
+      const counter = document.getElementById('upload-counter');
+      const selectedFiles = files.slice(0, 50);
+
+      if (files.length > 50) {
+        showToast('Only the first 50 files will be uploaded', 'error');
+      }
+
+      queue.innerHTML = selectedFiles.map((file, index) => `
+        <div class="queue-item" data-queue-index="${index}">
+          <div class="queue-meta">
+            <span>${escapeHtml(file.name)} (${Math.round(file.size / 1024)} KB)</span>
+            <span data-status>pending</span>
+          </div>
+          <div class="progress"><div class="progress-bar" data-progress></div></div>
+        </div>
+      `).join('');
+
+      let uploaded = 0;
+      counter.textContent = `${uploaded} of ${selectedFiles.length} uploaded`;
+
+      for (let index = 0; index < selectedFiles.length; index += 1) {
+        const file = selectedFiles[index];
+        const row = queue.querySelector(`[data-queue-index="${index}"]`);
+        const status = row.querySelector('[data-status]');
+        const progressBar = row.querySelector('[data-progress]');
+        const validationError = validateImageFile(file);
+
+        if (validationError) {
+          status.textContent = 'error';
+          showToast(`${file.name}: ${validationError}`, 'error');
+          continue;
+        }
+
+        const formData = new FormData();
+        formData.append('image', file);
+        formData.append('caption', '');
+
+        try {
+          status.textContent = 'uploading';
+          await uploadWithProgress(`/api/content/albums/${albumId}/photos`, formData, progressBar);
+          uploaded += 1;
+          status.textContent = 'done';
+          counter.textContent = `${uploaded} of ${selectedFiles.length} uploaded`;
+        } catch (error) {
+          status.textContent = 'error';
+          showToast(error.message, 'error');
+        }
+      }
+
+      state.cacheBust = Date.now();
+      await refreshAlbums();
+      renderGallery();
+    }
+
+    function bindAlbumPhotoActions(album) {
+      panelBody.querySelectorAll('[data-action="save-photo-caption"]').forEach((input) => {
+        input.addEventListener('blur', async () => {
+          const photoId = input.closest('[data-photo-id]').dataset.photoId;
+          try {
+            await api('PATCH', `/api/content/albums/${album.id}/photos/${photoId}`, {
+              caption: input.value.trim()
+            });
+            await refreshAlbums();
+            showToast('Caption saved');
+          } catch (error) {
+            showToast(error.message, 'error');
+          }
+        });
+      });
+
+      panelBody.querySelectorAll('[data-action="set-photo-cover"]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          const photoId = button.closest('[data-photo-id]').dataset.photoId;
+          const photo = album.photos.find((item) => item.id === photoId);
+          if (!photo) return;
+
+          try {
+            await api('PATCH', `/api/content/albums/${album.id}`, { cover_filename: photo.filename });
+            await refreshAlbums();
+            showToast('Cover updated');
+          } catch (error) {
+            showToast(error.message, 'error');
+          }
+        });
+      });
+
+      panelBody.querySelectorAll('[data-action="delete-photo"]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          const photoId = button.closest('[data-photo-id]').dataset.photoId;
+          if (!(await confirmDelete('Delete this photo?'))) return;
+          try {
+            await api('DELETE', `/api/content/albums/${album.id}/photos/${photoId}`);
+            state.cacheBust = Date.now();
+            await refreshAlbums();
+            renderGallery();
+            showToast('Photo deleted');
+          } catch (error) {
+            showToast(error.message, 'error');
+          }
+        });
+      });
+    }
+
+    function bindAlbumPhotoSorting(album, pageStart) {
+      const container = panelBody.querySelector('#album-photo-list');
+      if (!window.Sortable || !container || container.dataset.sortableBound === 'true') return;
+
+      container.dataset.sortableBound = 'true';
+      new Sortable(container, {
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        chosenClass: 'sortable-chosen',
+        onEnd: async () => {
+          const pageIds = Array.from(container.querySelectorAll('[data-photo-id]')).map((item) => item.dataset.photoId);
+          const ids = album.photos.map((photo) => photo.id);
+          ids.splice(pageStart, pageIds.length, ...pageIds);
+
+          try {
+            const updated = await api('POST', `/api/content/albums/${album.id}/reorder`, { ids });
+            const index = state.data.findIndex((item) => item.id === album.id);
+            if (index !== -1) state.data[index] = updated;
+            showToast('Photo order saved');
+          } catch (error) {
+            showToast(error.message, 'error');
+            await refreshAlbums();
+            renderGallery();
+          }
+        }
       });
     }
 
