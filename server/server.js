@@ -2,13 +2,13 @@ import 'dotenv/config';
 import express from 'express';
 import session from 'express-session';
 import cors from 'cors';
-import bcrypt from 'bcryptjs';
 import path from 'node:path';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import authRoutes from './routes/auth.js';
 import contentRoutes from './routes/content.js';
 import { initDb, rootDir } from './db/database.js';
+import { loadWriterAuth } from './db/writerAuth.js';
 
 const PORT = process.env.PORT || 3000;
 const WRITER_EMAIL = process.env.WRITER_EMAIL || 'saditto.adiya@gmail.com';
@@ -20,10 +20,7 @@ await initDb();
 
 const app = express();
 
-app.locals.writer = {
-  email: WRITER_EMAIL,
-  passwordHash: await bcrypt.hash(WRITER_PASSWORD, 10)
-};
+app.locals.writer = await loadWriterAuth(WRITER_EMAIL, WRITER_PASSWORD);
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,

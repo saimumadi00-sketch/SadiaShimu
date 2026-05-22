@@ -232,6 +232,33 @@ function createArrayRoutes(routePath, dataKey, options = {}) {
   }));
 }
 
+function createReorderRoute(routePath, dataKey) {
+  router.patch(`${routePath}/reorder`, requireAuth, asyncHandler(async (req, res) => {
+    if (!requireObjectBody(req, res)) return;
+
+    const ids = req.body.ids;
+    const items = db.data[dataKey];
+
+    if (!Array.isArray(ids) || !Array.isArray(items)) {
+      return badRequest(res, 'ids must be an array');
+    }
+
+    if (ids.length !== items.length) {
+      return badRequest(res, 'ids must include every item exactly once');
+    }
+
+    const byId = new Map(items.map((item) => [item.id, item]));
+    const uniqueIds = new Set(ids);
+
+    if (uniqueIds.size !== ids.length || ids.some((id) => !byId.has(id))) {
+      return badRequest(res, 'ids must include every item exactly once');
+    }
+
+    db.data[dataKey] = ids.map((id) => byId.get(id));
+    return saveAndRespond(res, 200, db.data[dataKey]);
+  }));
+}
+
 function createChildRoutes(routePath, itemsGetter, requiredFields, allowedFields, options = {}) {
   const postValidators = options.postValidators || [];
   const putValidators = options.putValidators || [];
@@ -286,6 +313,12 @@ function createChildRoutes(routePath, itemsGetter, requiredFields, allowedFields
   }));
 }
 
+router.get('/backup', requireAuth, (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Content-Disposition', 'attachment; filename="content-backup.json"');
+  return res.status(200).send(JSON.stringify(db.data, null, 2));
+});
+
 router.get('/hero', (req, res) => {
   return res.status(200).json(db.data.hero);
 });
@@ -325,6 +358,10 @@ createChildRoutes(
   ['label', 'value'],
   ['label', 'value']
 );
+
+createReorderRoute('/education', 'education');
+createReorderRoute('/research', 'research');
+createReorderRoute('/publications', 'publications');
 
 createArrayRoutes('/education', 'education');
 createArrayRoutes('/research', 'research');
@@ -479,6 +516,8 @@ createArrayRoutes('/leadership', 'leadership');
 router.get('/gallery', (req, res) => {
   return res.status(200).json(db.data.gallery);
 });
+
+createReorderRoute('/gallery', 'gallery');
 
 router.post('/gallery/upload', requireAuth, singleImageUpload('image'), sanitizeBody, asyncHandler(async (req, res) => {
   if (!req.file) {

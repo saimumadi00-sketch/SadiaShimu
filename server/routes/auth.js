@@ -1,6 +1,8 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import { body, validationResult } from 'express-validator';
+import requireAuth from '../middleware/requireAuth.js';
+import { saveWriterPasswordHash } from '../db/writerAuth.js';
 
 const router = express.Router();
 
@@ -20,6 +22,19 @@ const loginValidation = [
     .withMessage('Password is required')
     .isLength({ max: 128 })
     .withMessage('Password must be 128 characters or fewer')
+];
+
+const changePasswordValidation = [
+  body('currentPassword')
+    .notEmpty()
+    .withMessage('Current password is required')
+    .isLength({ max: 128 })
+    .withMessage('Current password must be 128 characters or fewer'),
+  body('newPassword')
+    .notEmpty()
+    .withMessage('New password is required')
+    .isLength({ min: 8, max: 128 })
+    .withMessage('New password must be between 8 and 128 characters')
 ];
 
 function validateRequest(req, res, next) {
@@ -85,6 +100,27 @@ router.get('/me', (req, res) => {
     loggedIn,
     email: loggedIn ? req.session.user.email : null
   });
+});
+
+router.post('/change-password', requireAuth, changePasswordValidation, validateRequest, async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body || {};
+    const writer = req.app.locals.writer;
+
+    const passwordMatches = await bcrypt.compare(currentPassword, writer.passwordHash);
+
+    if (!passwordMatches) {
+      return res.status(401).json({ error: 'Current password is incorrect' });
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await saveWriterPasswordHash(writer.email, passwordHash);
+    writer.passwordHash = passwordHash;
+
+    return res.status(200).json({ changed: true });
+  } catch (error) {
+    return next(error);
+  }
 });
 
 export default router;
