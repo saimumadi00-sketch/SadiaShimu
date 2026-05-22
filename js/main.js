@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', function () {
     {
       id: 'static-general',
       name: 'General',
+      featured: true,
       cover_filename: 'gallery-1.jpg',
       photos: [
         { id: 'static-ph1', filename: 'gallery-1.jpg', caption: 'Field photo will be added soon.' },
@@ -650,8 +651,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     container.innerHTML = galleryAlbums.map(function (album, index) {
       const cover = albumCover(album);
+      const cardClass = 'gallery-album-card' + (index === 0 ? ' gallery-album-card--featured' : '');
       return '' +
-        '<button class="gallery-album-card" type="button" data-gallery-album-index="' + index + '">' +
+        '<button class="' + cardClass + '" type="button" data-gallery-album-index="' + index + '">' +
           '<span class="gallery-album-cover">' +
             '<img src="' + imageSrc(cover) + '" alt="' + escapeHtml(album.name) + ' cover" loading="lazy" />' +
           '</span>' +
