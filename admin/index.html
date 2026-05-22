@@ -163,6 +163,26 @@
       font-weight: 700;
     }
 
+    .topbar-left,
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .unsaved-badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: #fff7df;
+      color: #8a5a00;
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+
     .main {
       margin-left: 260px;
       padding: 28px;
@@ -627,6 +647,13 @@
       font-weight: 700;
     }
 
+    .settings-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      align-items: start;
+    }
+
     @media (max-width: 1020px) {
       .section-grid,
       .skills-grid,
@@ -657,6 +684,15 @@
         flex-direction: column;
       }
 
+      .topbar-left,
+      .topbar-actions {
+        width: 100%;
+      }
+
+      .topbar-actions .btn {
+        flex: 1 1 150px;
+      }
+
       .main {
         padding: 16px;
       }
@@ -667,7 +703,8 @@
       }
 
       .form-grid,
-      .detail-row {
+      .detail-row,
+      .settings-grid {
         grid-template-columns: 1fr;
       }
     }
@@ -701,8 +738,15 @@
     </aside>
 
     <header class="topbar">
-      <div class="editing-label">Editing: <strong id="editing-email"></strong></div>
-      <button id="logout-button" class="btn danger" type="button">Logout</button>
+      <div class="topbar-left">
+        <div class="editing-label">Editing: <strong id="editing-email"></strong></div>
+        <span id="unsaved-badge" class="unsaved-badge hidden">Unsaved changes</span>
+      </div>
+      <div class="topbar-actions">
+        <button id="restore-draft-button" class="btn hidden" type="button">Restore Draft</button>
+        <button id="backup-button" class="btn" type="button">Download Backup</button>
+        <button id="logout-button" class="btn danger" type="button">Logout</button>
+      </div>
     </header>
 
     <main class="main">
@@ -734,14 +778,16 @@
       { id: 'leadership', label: 'Leadership', subtitle: 'Edit leadership and activities content.' },
       { id: 'gallery', label: 'Gallery', subtitle: 'Upload images and edit captions.' },
       { id: 'portrait', label: 'Portrait', subtitle: 'Upload the profile portrait image.' },
-      { id: 'contact', label: 'Contact', subtitle: 'Edit contact section and contact links.' }
+      { id: 'contact', label: 'Contact', subtitle: 'Edit contact section and contact links.' },
+      { id: 'settings', label: 'Settings', subtitle: 'Manage account security and content backups.' }
     ];
 
     const state = {
       email: '',
       currentSection: 'hero',
       data: null,
-      cacheBust: Date.now()
+      cacheBust: Date.now(),
+      unsaved: false
     };
 
     const loginScreen = document.getElementById('login-screen');
@@ -750,6 +796,9 @@
     const loginError = document.getElementById('login-error');
     const navList = document.getElementById('nav-list');
     const editingEmail = document.getElementById('editing-email');
+    const unsavedBadge = document.getElementById('unsaved-badge');
+    const restoreDraftButton = document.getElementById('restore-draft-button');
+    const backupButton = document.getElementById('backup-button');
     const logoutButton = document.getElementById('logout-button');
     const panelTitle = document.getElementById('panel-title');
     const panelSubtitle = document.getElementById('panel-subtitle');
@@ -874,6 +923,127 @@
       }
     }
 
+    function draftKey(sectionId = state.currentSection) {
+      return `portfolio-admin-draft:${sectionId}`;
+    }
+
+    function getStoredDraft(sectionId = state.currentSection) {
+      try {
+        const raw = localStorage.getItem(draftKey(sectionId));
+        return raw ? JSON.parse(raw) : null;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function setUnsaved(value) {
+      state.unsaved = value;
+      unsavedBadge.classList.toggle('hidden', !value);
+      updateDraftControls();
+    }
+
+    function updateDraftControls() {
+      const hasDraft = Boolean(getStoredDraft(state.currentSection));
+      restoreDraftButton.classList.toggle('hidden', !hasDraft);
+    }
+
+    function collectDraftFields() {
+      return Array.from(panelBody.querySelectorAll('input, textarea, select'))
+        .filter((field) => field.type !== 'file')
+        .map((field, index) => ({
+          index,
+          name: field.name || '',
+          id: field.id || '',
+          type: field.type || field.tagName.toLowerCase(),
+          value: field.type === 'checkbox' ? field.checked : field.value
+        }));
+    }
+
+    function saveCurrentDraft() {
+      if (!state.unsaved || !state.currentSection) return;
+
+      const fields = collectDraftFields();
+      if (!fields.length) return;
+
+      try {
+        localStorage.setItem(draftKey(), JSON.stringify({
+          section: state.currentSection,
+          savedAt: new Date().toISOString(),
+          fields
+        }));
+        updateDraftControls();
+      } catch (error) {
+        showToast('Autosave storage is unavailable', 'error');
+      }
+    }
+
+    function clearDraft(sectionId = state.currentSection) {
+      try {
+        localStorage.removeItem(draftKey(sectionId));
+      } catch (error) {
+        return;
+      }
+      updateDraftControls();
+    }
+
+    function restoreCurrentDraft() {
+      const draft = getStoredDraft(state.currentSection);
+      if (!draft || !Array.isArray(draft.fields)) return;
+
+      const fields = Array.from(panelBody.querySelectorAll('input, textarea, select'))
+        .filter((field) => field.type !== 'file');
+
+      draft.fields.forEach((savedField) => {
+        const field = fields[savedField.index];
+        if (!field) return;
+
+        if (field.type === 'checkbox') {
+          field.checked = Boolean(savedField.value);
+        } else {
+          field.value = savedField.value;
+        }
+
+        field.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+
+      setUnsaved(true);
+      showToast('Draft restored');
+    }
+
+    async function downloadBackup() {
+      try {
+        const response = await fetch('/api/content/backup', {
+          method: 'GET',
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          let message = `Request failed with ${response.status}`;
+          try {
+            const data = await response.json();
+            if (data && data.error) message = data.error;
+          } catch (error) {
+            // Keep the status-based message.
+          }
+          throw new Error(message);
+        }
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        const stamp = new Date().toISOString().slice(0, 10);
+        link.href = url;
+        link.download = `content-backup-${stamp}.json`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+        showToast('Backup downloaded');
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    }
+
     function showLogin() {
       app.classList.add('hidden');
       loginScreen.classList.remove('hidden');
@@ -886,6 +1056,7 @@
       loginScreen.classList.add('hidden');
       app.classList.remove('hidden');
       renderNavigation();
+      updateDraftControls();
       openSection(state.currentSection);
     }
 
@@ -902,7 +1073,12 @@
     }
 
     async function openSection(id) {
+      if (state.unsaved) {
+        saveCurrentDraft();
+      }
+
       state.currentSection = id;
+      setUnsaved(false);
       renderNavigation();
       const section = sections.find((item) => item.id === id);
       panelTitle.textContent = section.label;
@@ -911,9 +1087,13 @@
       showSpinner();
 
       try {
-        if (id === 'portrait') {
+        if (id === 'portrait' || id === 'settings') {
           state.data = null;
-          renderPortrait();
+          if (id === 'portrait') {
+            renderPortrait();
+          } else {
+            renderSettings();
+          }
           return;
         }
 
@@ -924,11 +1104,14 @@
         showToast(error.message, 'error');
       } finally {
         hideSpinner();
+        updateDraftControls();
       }
     }
 
     async function reloadSection(message) {
       if (message) showToast(message, 'success');
+      clearDraft(state.currentSection);
+      setUnsaved(false);
       await openSection(state.currentSection);
     }
 
@@ -973,6 +1156,27 @@
       } finally {
         showLogin();
       }
+    });
+
+    backupButton.addEventListener('click', downloadBackup);
+    restoreDraftButton.addEventListener('click', restoreCurrentDraft);
+
+    panelBody.addEventListener('input', (event) => {
+      if (event.target.matches('input, textarea, select')) {
+        setUnsaved(true);
+      }
+    });
+
+    panelBody.addEventListener('change', (event) => {
+      if (event.target.matches('input, textarea, select')) {
+        setUnsaved(true);
+      }
+    });
+
+    setInterval(saveCurrentDraft, 30000);
+
+    window.addEventListener('beforeunload', () => {
+      if (state.unsaved) saveCurrentDraft();
     });
 
     function renderHero() {
@@ -1994,6 +2198,62 @@
           state.cacheBust = Date.now();
           showToast('Portrait uploaded', 'success');
           renderPortrait();
+        } catch (error) {
+          showToast(error.message, 'error');
+        }
+      });
+    }
+
+    function renderSettings() {
+      panelBody.innerHTML = `
+        <div class="settings-grid">
+          <form id="password-form" class="form-card">
+            <h3>Change Password</h3>
+            <div class="field">
+              <label>Current Password</label>
+              <input type="password" name="currentPassword" autocomplete="current-password" required />
+            </div>
+            <div class="field">
+              <label>New Password</label>
+              <input type="password" name="newPassword" autocomplete="new-password" minlength="8" required />
+            </div>
+            <div class="field">
+              <label>Confirm New Password</label>
+              <input type="password" name="confirmPassword" autocomplete="new-password" minlength="8" required />
+            </div>
+            <button class="btn primary" type="submit">Change Password</button>
+          </form>
+          <div class="form-card">
+            <h3>Content Backup</h3>
+            <p class="item-meta">Download the current portfolio content JSON for safekeeping.</p>
+            <div class="actions">
+              <button id="settings-backup-button" class="btn primary" type="button">Download Backup</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('settings-backup-button').addEventListener('click', downloadBackup);
+      document.getElementById('password-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const newPassword = formValue(form, 'newPassword');
+        const confirmPassword = formValue(form, 'confirmPassword');
+
+        if (newPassword !== confirmPassword) {
+          showToast('New passwords do not match', 'error');
+          return;
+        }
+
+        try {
+          await api('POST', '/api/change-password', {
+            currentPassword: formValue(form, 'currentPassword'),
+            newPassword
+          });
+          form.reset();
+          clearDraft(state.currentSection);
+          setUnsaved(false);
+          showToast('Password changed');
         } catch (error) {
           showToast(error.message, 'error');
         }
