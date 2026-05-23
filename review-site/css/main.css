@@ -485,7 +485,7 @@ html.dark .dark-toggle .icon-sun  { display: block; }
   position: absolute;
   top: -20px; right: -20px;
   width: 120px; height: 120px;
-  border: 2px solid rgba(45,90,61,0.20);
+  border: 2px solid var(--surface-border);
   border-radius: 50%;
   pointer-events: none;
 }
@@ -1407,7 +1407,7 @@ html.dark .gallery-lightbox {
   line-height: 1.2;
 }
 
-.contact-sub { color: rgba(247,243,234,0.65); line-height: 1.8; }
+.contact-sub { color: rgba(255,255,255,0.65); line-height: 1.8; }
 
 .contact-right { display: flex; flex-direction: column; }
 
@@ -1445,13 +1445,13 @@ html.dark .gallery-lightbox {
 }
 
 .contact-item strong { display: block; font-size: 14px; margin-bottom: 2px; }
-.contact-item span { font-size: 13px; color: rgba(247,243,234,0.65); }
+.contact-item span { font-size: 13px; color: rgba(255,255,255,0.65); }
 
 /* ── FOOTER ───────────────────────────────────────────────── */
 #footer {
   background: var(--accent-3);
   padding: 48px 40px;
-  color: rgba(247,243,234,0.55);
+  color: rgba(255,255,255,0.55);
 }
 
 .footer-inner {
