@@ -767,14 +767,14 @@ html.dark .btn-cv:hover {
 
 .research-card--featured {
   grid-column: span 2;
-  background: linear-gradient(135deg, var(--accent-2), var(--accent));
+  background: linear-gradient(135deg, #1e3d29, #2d5a3d);
   color: var(--ivory);
   border: none;
 }
 
-.research-card--featured h3 { color: var(--ivory); }
-.research-card--featured p { color: rgba(247,243,234,0.80); }
-.research-card--featured .research-meta span { color: rgba(247,243,234,0.70); }
+.research-card--featured h3 { color: rgba(255,255,255,0.95); }
+.research-card--featured p { color: rgba(255,255,255,0.80); }
+.research-card--featured .research-meta span { color: rgba(255,255,255,0.70); }
 
 .research-card-tag {
   display: inline-block;
@@ -790,8 +790,8 @@ html.dark .btn-cv:hover {
 }
 
 .research-card--featured .research-card-tag {
-  background: rgba(247,243,234,0.15);
-  color: var(--ivory);
+  background: rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.95);
 }
 
 .research-card-tag--past {
