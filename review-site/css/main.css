@@ -443,6 +443,43 @@ html.dark .dark-toggle .icon-sun  { display: block; }
   transition: var(--transition);
 }
 
+.btn-cv {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 28px;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--ochre);
+  background: transparent;
+  color: var(--ochre);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-transition: var(--transition);
+  transition: var(--transition);
+}
+
+.btn-cv:hover {
+  background: var(--ochre);
+  color: var(--ivory);
+  box-shadow: 0 8px 32px rgba(184,133,42,0.25);
+  -webkit-transform: translateY(-2px);
+  transform: translateY(-2px);
+}
+
+html.dark .btn-cv {
+  color: var(--ochre-light);
+  border-color: var(--ochre-light);
+}
+
+html.dark .btn-cv:hover {
+  background: var(--ochre-light);
+  color: var(--forest-3);
+}
+
 .btn-ghost > i { margin-right: 8px; }
 
 .btn-ghost:hover {
