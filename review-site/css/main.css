@@ -772,7 +772,7 @@ html.dark .btn-cv:hover {
   border: none;
 }
 
-.research-card--featured h3 { color: rgba(255,255,255,0.95); }
+.research-card--featured h3 { color: rgba(255,255,255,0.95) !important; }
 .research-card--featured p { color: rgba(255,255,255,0.80); }
 .research-card--featured .research-meta span { color: rgba(255,255,255,0.70); }
 
