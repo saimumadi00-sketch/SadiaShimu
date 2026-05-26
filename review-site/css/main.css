@@ -292,6 +292,7 @@ html.dark .dark-toggle .icon-sun  { display: block; }
 /* ── HERO ─────────────────────────────────────────────────── */
 #hero {
   min-height: 100vh;
+  min-height: -webkit-fill-available;
   display: flex;
   align-items: center;
   position: relative;
