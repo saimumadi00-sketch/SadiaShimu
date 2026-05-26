@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://sadia-shimu.vercel.app/sitemap.xml
