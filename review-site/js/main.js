@@ -429,6 +429,83 @@ document.addEventListener('DOMContentLoaded', function () {
     if (statsEl) counterObserver.observe(statsEl);
   }
 
+  /* ── TYPED TEXT EFFECT ──────────────────────────────────── */
+  (function initTyped() {
+    var el = document.getElementById('hero-typed');
+    if (!el) return;
+    var roles = ['Zoologist', 'Field Researcher', 'Conservationist', 'Primatologist'];
+    var roleIndex = 0;
+    var charIndex = 0;
+    var deleting = false;
+    var pauseTimer = null;
+
+    function type() {
+      var current = roles[roleIndex];
+      if (deleting) {
+        charIndex--;
+      } else {
+        charIndex++;
+      }
+      el.textContent = current.slice(0, charIndex);
+      var delay = deleting ? 60 : 100;
+      if (!deleting && charIndex === current.length) {
+        delay = 1800;
+        deleting = true;
+      } else if (deleting && charIndex === 0) {
+        deleting = false;
+        roleIndex = (roleIndex + 1) % roles.length;
+        delay = 400;
+      }
+      pauseTimer = setTimeout(type, delay);
+    }
+    setTimeout(type, 1200);
+  })();
+
+  /* ── PUBLICATION YEAR FILTER ────────────────────────────── */
+  (function initPubFilter() {
+    var filterBtns = document.querySelectorAll('.pub-filter-btn');
+    var pubItems = document.querySelectorAll('.pub-item[data-year]');
+    if (!filterBtns.length) return;
+
+    filterBtns.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        filterBtns.forEach(function (b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        var year = btn.getAttribute('data-year');
+        pubItems.forEach(function (item) {
+          if (year === 'all' || item.getAttribute('data-year') === year) {
+            item.style.display = '';
+            item.style.opacity = '0';
+            item.style.transform = 'translateY(10px)';
+            setTimeout(function () {
+              item.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+              item.style.opacity = '1';
+              item.style.transform = 'translateY(0)';
+            }, 10);
+          } else {
+            item.style.display = 'none';
+          }
+        });
+      });
+    });
+  })();
+
+  /* ── SMOOTH IMAGE REVEAL ────────────────────────────────── */
+  (function initImgReveal() {
+    var imgs = document.querySelectorAll('img.img-reveal');
+    imgs.forEach(function (img) {
+      img.style.opacity = '0';
+      img.style.transition = 'opacity 0.6s ease';
+      if (img.complete && img.naturalWidth) {
+        img.style.opacity = '1';
+      } else {
+        img.addEventListener('load', function () {
+          img.style.opacity = '1';
+        });
+      }
+    });
+  })();
+
   /* ── STATIC-SAFE RENDER HELPERS ────────────────────────── */
   function escapeHtml(value) {
     return String(value == null ? '' : value)

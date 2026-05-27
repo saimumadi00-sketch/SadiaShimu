@@ -1643,3 +1643,55 @@ html.dark .gallery-lightbox {
   color: var(--ivory);
   border-color: var(--accent);
 }
+
+/* ── PUBLICATION YEAR FILTER ────────────────────────────── */
+.pub-filter {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+.pub-filter-btn {
+  padding: 6px 18px;
+  border-radius: 50px;
+  border: 1.5px solid var(--surface-border);
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  -webkit-transition: var(--transition);
+  transition: var(--transition);
+}
+
+.pub-filter-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.pub-filter-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--ivory);
+}
+
+/* ── PRINT STYLES ───────────────────────────────────────── */
+@media print {
+  #navbar, #back-top, #read-progress, .hero-actions,
+  .dark-toggle, .nav-hamburger, #pub-filter,
+  .gallery-lightbox, .portrait-deco { display: none !important; }
+
+  body { background: #fff !important; color: #111 !important; font-size: 11pt; }
+  #hero { min-height: auto; padding: 24pt 0 16pt; }
+  .hero-inner { display: block; }
+  .hero-portrait { display: none; }
+  .hero-name { font-size: 28pt; }
+  .section-inner { padding: 20pt 0; }
+  .section-alt { background: #fff !important; }
+  .research-card, .pub-item, .timeline-item { break-inside: avoid; }
+  a { color: inherit; text-decoration: none; }
+  .pub-arrow { display: none; }
+}

@@ -79,7 +79,7 @@
       <div class="hero-bg-pattern"></div>
       <div class="hero-inner">
         <div class="hero-text">
-          <p class="hero-eyebrow reveal" data-cms="hero-eyebrow">Zoology · Primatology · Conservation</p>
+          <p class="hero-eyebrow reveal" data-cms="hero-eyebrow" id="hero-typed">Zoology · Primatology · Conservation</p>
           <h1 class="hero-name reveal delay-1">Mst. Sadia<br><em>Afrin Shimu</em></h1>
           <p class="hero-tagline reveal delay-2" data-cms="hero-tagline">
             Studying the primates others overlook — in the forests, markets, and communities of Bangladesh.
@@ -101,7 +101,7 @@
         </div>
         <div class="hero-portrait reveal delay-2">
           <div class="portrait-frame">
-            <img src="images/portrait.jpg" alt="Mst. Sadia Afrin Shimu" id="portrait-img" onerror="this.onerror=null;this.style.background='#2d5a3d';this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'500\'%3E%3Crect width=\'400\' height=\'500\' fill=\'%232d5a3d\'/%3E%3Ctext x=\'200\' y=\'260\' font-family=\'serif\' font-size=\'80\' fill=\'%23f7f3ea\' text-anchor=\'middle\'%3ES%3C/text%3E%3C/svg%3E'" />
+            <img src="images/portrait.jpg" alt="Mst. Sadia Afrin Shimu" id="portrait-img" class="img-reveal" onerror="this.onerror=null;this.style.background='#2d5a3d';this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'500\'%3E%3Crect width=\'400\' height=\'500\' fill=\'%232d5a3d\'/%3E%3Ctext x=\'200\' y=\'260\' font-family=\'serif\' font-size=\'80\' fill=\'%23f7f3ea\' text-anchor=\'middle\'%3ES%3C/text%3E%3C/svg%3E'" />
             <div class="portrait-badge"><i class="fa-solid fa-leaf"></i> Wildlife Researcher</div>
           </div>
           <div class="portrait-deco"></div>
@@ -268,8 +268,14 @@
           <h2 class="section-title">Publications & Conference</h2>
         </div>
 
+        <div class="pub-filter" id="pub-filter">
+          <button class="pub-filter-btn active" data-year="all">All</button>
+          <button class="pub-filter-btn" data-year="2024">2024</button>
+          <button class="pub-filter-btn" data-year="2023">2023</button>
+        </div>
+
         <div class="pub-list" data-cms="pub-list">
-          <a href="https://www.researchgate.net/publication/380436974_Live_non-human_primate_trafficking_in_Bangladesh_A_growing_threat_to_the_remaining_populations" target="_blank" rel="noopener noreferrer" class="pub-item">
+          <a href="https://www.researchgate.net/publication/380436974_Live_non-human_primate_trafficking_in_Bangladesh_A_growing_threat_to_the_remaining_populations" target="_blank" rel="noopener noreferrer" class="pub-item" data-year="2024">
             <div class="pub-number">01</div>
             <div class="pub-body">
               <h3>Live non-human primate trafficking in Bangladesh: A growing threat to the remaining populations</h3>
@@ -279,7 +285,7 @@
             <div class="pub-arrow"><i class="fa-solid fa-arrow-up-right-from-square"></i></div>
           </a>
 
-          <a href="https://www.researchgate.net/profile/Mst-Sadia-Afrin-Shimu" target="_blank" rel="noopener noreferrer" class="pub-item">
+          <a href="https://www.researchgate.net/profile/Mst-Sadia-Afrin-Shimu" target="_blank" rel="noopener noreferrer" class="pub-item" data-year="2024">
             <div class="pub-number">02</div>
             <div class="pub-body">
               <h3>Conservation from the root: awareness-raising activities to conserve the Endangered Bengal slow loris in Bangladesh</h3>
@@ -289,7 +295,7 @@
             <div class="pub-arrow"><i class="fa-solid fa-arrow-up-right-from-square"></i></div>
           </a>
 
-          <a href="https://www.researchgate.net/profile/Mst-Sadia-Afrin-Shimu" target="_blank" rel="noopener noreferrer" class="pub-item">
+          <a href="https://www.researchgate.net/profile/Mst-Sadia-Afrin-Shimu" target="_blank" rel="noopener noreferrer" class="pub-item" data-year="2023">
             <div class="pub-number">03</div>
             <div class="pub-body">
               <h3>Daily activity budget and home range of two confiscated Bengal Slow Loris in a forest patch of Bangladesh</h3>
