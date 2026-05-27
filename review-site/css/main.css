@@ -1591,3 +1591,55 @@ html.dark .gallery-lightbox {
   .gallery-item--wide { grid-column: span 1; }
   .hero-stats { padding: 20px; }
 }
+
+/* ── READING PROGRESS BAR ───────────────────────────────── */
+#read-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 0%;
+  background: var(--ochre);
+  z-index: 9999;
+  -webkit-transition: width 0.1s linear;
+  transition: width 0.1s linear;
+}
+
+/* ── BACK TO TOP ────────────────────────────────────────── */
+#back-top {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1.5px solid var(--surface-border);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  -webkit-transform: translateY(12px);
+  transform: translateY(12px);
+  -webkit-transition: opacity 0.3s ease, -webkit-transform 0.3s ease, background 0.2s ease, color 0.2s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease, background 0.2s ease, color 0.2s ease;
+  z-index: 999;
+  box-shadow: var(--shadow);
+}
+
+#back-top.visible {
+  opacity: 1;
+  pointer-events: auto;
+  -webkit-transform: translateY(0);
+  transform: translateY(0);
+}
+
+#back-top:hover {
+  background: var(--accent);
+  color: var(--ivory);
+  border-color: var(--accent);
+}

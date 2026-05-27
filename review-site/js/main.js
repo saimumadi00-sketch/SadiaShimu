@@ -369,6 +369,66 @@ document.addEventListener('DOMContentLoaded', function () {
 
   bindSmoothScrollLinks(document);
 
+  /* ── READING PROGRESS BAR ───────────────────────────────── */
+  var progressBar = document.createElement('div');
+  progressBar.id = 'read-progress';
+  document.body.appendChild(progressBar);
+
+  /* ── BACK TO TOP BUTTON ─────────────────────────────────── */
+  var backTop = document.createElement('button');
+  backTop.id = 'back-top';
+  backTop.setAttribute('aria-label', 'Back to top');
+  backTop.innerHTML = '<i class="fa-solid fa-arrow-up"></i>';
+  document.body.appendChild(backTop);
+  backTop.addEventListener('click', function () {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  window.addEventListener('scroll', function () {
+    var scrollTop = window.scrollY || document.documentElement.scrollTop;
+    var docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    var pct = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+    progressBar.style.width = pct + '%';
+    if (scrollTop > 400) {
+      backTop.classList.add('visible');
+    } else {
+      backTop.classList.remove('visible');
+    }
+  }, { passive: true });
+
+  /* ── COUNTER ANIMATION ──────────────────────────────────── */
+  var statNums = document.querySelectorAll('.stat-num');
+  if (statNums.length) {
+    var countered = false;
+    var counterObserver = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting && !countered) {
+          countered = true;
+          statNums.forEach(function (el) {
+            var raw = el.textContent.trim();
+            var suffix = raw.replace(/[0-9]/g, '');
+            var target = parseInt(raw.replace(/[^0-9]/g, ''), 10);
+            if (isNaN(target)) return;
+            var duration = 1400;
+            var startTime = null;
+            function step(ts) {
+              if (!startTime) startTime = ts;
+              var progress = Math.min((ts - startTime) / duration, 1);
+              var ease = 1 - Math.pow(1 - progress, 3);
+              el.textContent = Math.floor(ease * target) + suffix;
+              if (progress < 1) requestAnimationFrame(step);
+              else el.textContent = target + suffix;
+            }
+            requestAnimationFrame(step);
+          });
+          counterObserver.disconnect();
+        }
+      });
+    }, { threshold: 0.5 });
+    var statsEl = document.querySelector('.hero-stats');
+    if (statsEl) counterObserver.observe(statsEl);
+  }
+
   /* ── STATIC-SAFE RENDER HELPERS ────────────────────────── */
   function escapeHtml(value) {
     return String(value == null ? '' : value)
