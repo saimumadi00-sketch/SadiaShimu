@@ -4,6 +4,29 @@
    ============================================================ */
 
 document.addEventListener('DOMContentLoaded', function () {
+
+  /* ── PAGE LOADER ────────────────────────────────────────── */
+  var loader = document.getElementById('page-loader');
+  if (loader) {
+    var minDisplay = 1800;
+    var startTime = Date.now();
+    function dismissLoader() {
+      var elapsed = Date.now() - startTime;
+      var remaining = Math.max(0, minDisplay - elapsed);
+      setTimeout(function () {
+        loader.classList.add('done');
+        setTimeout(function () {
+          loader.style.display = 'none';
+        }, 650);
+      }, remaining);
+    }
+    if (document.readyState === 'complete') {
+      dismissLoader();
+    } else {
+      window.addEventListener('load', dismissLoader);
+      setTimeout(dismissLoader, 3500);
+    }
+  }
   const galleryFallbackColors = ['e8dfc9', 'd8e2d4', 'cfd7c3', 'efe3c5', 'dde4d6', 'e5dcc5'];
   const staticMapMarkers = [
     { lat: 23.7337, lng: 90.3925, title: 'Jagannath University, Dhaka', desc: 'Home institution — BSc & MSc in Zoology' },
