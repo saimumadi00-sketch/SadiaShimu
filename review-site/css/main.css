@@ -1593,7 +1593,14 @@ html.dark .gallery-lightbox {
     margin: 0 auto;
     order: -1;
   }
-  .portrait-frame img { border-radius: 50%; }
+  .portrait-frame {
+    aspect-ratio: 1/1;
+    border-radius: 50%;
+  }
+  .portrait-frame img { border-radius: 0; }
+  .portrait-deco { display: none; }
+  .portrait-badge { font-size: 11px; padding: 7px 14px; bottom: 12px; left: 12px; }
+  .hero-scroll-hint { display: none; }
   .hero-eyebrow { text-align: center; }
   .hero-name { font-size: clamp(2.2rem, 8vw, 3rem); }
   .hero-tagline { font-size: 15px; }
