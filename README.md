@@ -7,14 +7,14 @@ Static portfolio website hosted on Vercel.
 ## Structure
 
 ```
-review-site/
+/
 ├── index.html          # Main portfolio page — edit content here
 ├── css/main.css        # All styles
 ├── js/main.js          # All scripts
 ├── images/             # Portrait and gallery photos
 │   ├── portrait.jpg    # Profile photo
 │   ├── gallery-1.jpg   # Gallery album covers
-│   └── gallery/        # Gallery photo folders (one folder = one album)
+│   └── gallery/        # Gallery photo folders
 ├── certificates/       # Certificate images
 ├── cv.pdf              # Downloadable CV
 ├── favicon.svg/.ico    # Site icon
@@ -25,7 +25,7 @@ review-site/
 
 ## Updating content
 
-Edit `review-site/index.html` directly — all content is hardcoded static HTML.
+Edit `index.html` directly — all content is hardcoded static HTML.
 
 ## Deployment
 
