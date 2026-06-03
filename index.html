@@ -41,6 +41,10 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
 
+  <!-- Embla Carousel -->
+  <script src="https://unpkg.com/embla-carousel@8/embla-carousel.umd.js" defer></script>
+  <script src="https://unpkg.com/embla-carousel-auto-scroll@8/embla-carousel-auto-scroll.umd.js" defer></script>
+
   <!-- Main CSS -->
   <link rel="stylesheet" href="css/main.css" />
 </head>
@@ -476,16 +480,29 @@
           <h2 class="section-title">Field Gallery</h2>
           <p class="section-sub">From the field, the forest, and the classroom.</p>
         </div>
-        <div class="gallery-grid" data-cms="gallery-grid">
-          <button class="gallery-album-card gallery-album-card--featured" type="button" data-gallery-album-index="0">
-            <span class="gallery-album-cover">
-              <img src="images/gallery-1.jpg" alt="General field gallery cover" loading="lazy" onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'800\' height=\'500\'%3E%3Crect width=\'800\' height=\'500\' fill=\'%231e3d29\'/%3E%3Ctext x=\'400\' y=\'260\' font-family=\'serif\' font-size=\'32\' fill=\'%23f7f3ea\' text-anchor=\'middle\'%3EField Gallery%3C/text%3E%3C/svg%3E'" />
-            </span>
-            <span class="gallery-album-body">
-              <span class="gallery-album-title">General</span>
-              <span class="gallery-album-count">6 photos</span>
-            </span>
-          </button>
+        <div class="gallery-carousel-stack" data-cms="gallery-grid">
+          <div class="gallery-photo-carousel embla" id="gallery-photo-carousel" aria-label="All gallery photos">
+            <div class="gallery-carousel-viewport embla__viewport">
+              <div class="gallery-photo-track embla__container" id="gallery-photo-track"></div>
+            </div>
+          </div>
+
+          <div class="gallery-album-carousel embla" id="gallery-album-carousel" aria-label="Gallery albums">
+            <div class="gallery-album-toolbar">
+              <h3 class="gallery-album-heading">Albums</h3>
+              <div class="gallery-album-controls">
+                <button class="gallery-carousel-control" type="button" id="gallery-album-prev" aria-label="Previous album">
+                  <i class="fa-solid fa-arrow-left"></i>
+                </button>
+                <button class="gallery-carousel-control" type="button" id="gallery-album-next" aria-label="Next album">
+                  <i class="fa-solid fa-arrow-right"></i>
+                </button>
+              </div>
+            </div>
+            <div class="gallery-carousel-viewport embla__viewport">
+              <div class="gallery-album-track embla__container" id="gallery-album-track"></div>
+            </div>
+          </div>
         </div>
       </div>
     </section>

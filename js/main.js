@@ -58,6 +58,9 @@ document.addEventListener('DOMContentLoaded', function () {
   let activeAlbumIndex = 0;
   let activePhotoIndex = 0;
   let touchStartX = null;
+  let galleryPhotoEmbla = null;
+  let galleryAlbumEmbla = null;
+  let galleryFlatPhotos = [];
 
   const navbar = document.getElementById('navbar');
 
@@ -177,7 +180,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function attachGalleryFallbacks(scope) {
-    (scope || document).querySelectorAll('.gallery-item img, .gallery-album-cover img, .gallery-lightbox-image').forEach(function (img, i) {
+    (scope || document).querySelectorAll('.gallery-photo-image, .gallery-album-image, .gallery-lightbox-image').forEach(function (img, i) {
       if (img.dataset.fallbackBound === 'true') return;
       img.dataset.fallbackBound = 'true';
       img.addEventListener('error', function () {
@@ -187,20 +190,206 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  attachGalleryFallbacks(document);
-
   function imageSrc(filename) {
-    return filename ? '/images/' + encodeURIComponent(filename) : 'https://placehold.co/900x600/e8dfc9/183326?text=Field+Photo';
+    if (!filename) return 'https://placehold.co/900x600/e8dfc9/183326?text=Field+Photo';
+    return '/images/' + String(filename).split('/').map(encodeURIComponent).join('/');
+  }
+
+  function cleanGalleryCaption(caption) {
+    const text = String(caption || '').trim();
+    return text === '[Caption]' ? '' : text;
+  }
+
+  function galleryPhotoCount(album) {
+    return Array.isArray(album.photos) ? album.photos.length : 0;
+  }
+
+  function formatPhotoCount(count) {
+    return count + ' photo' + (count === 1 ? '' : 's');
+  }
+
+  function albumCover(album) {
+    if (album.cover_filename) return album.cover_filename;
+    if (Array.isArray(album.photos) && album.photos[0]) return album.photos[0].filename;
+    return '';
+  }
+
+  function flattenGalleryPhotos() {
+    const photos = [];
+
+    galleryAlbums.forEach(function (album, albumIndex) {
+      if (!Array.isArray(album.photos)) return;
+
+      album.photos.forEach(function (photo, photoIndex) {
+        photos.push({
+          albumIndex: albumIndex,
+          photoIndex: photoIndex,
+          albumName: album.name || 'Album',
+          filename: photo.filename,
+          caption: cleanGalleryCaption(photo.caption)
+        });
+      });
+    });
+
+    return photos;
   }
 
   function bindGalleryAlbumCards(scope) {
-    (scope || document).querySelectorAll('[data-gallery-album-index]').forEach(function (card) {
+    (scope || document).querySelectorAll('[data-gallery-album-index]:not([data-gallery-photo-index])').forEach(function (card) {
       if (card.dataset.albumBound === 'true') return;
       card.dataset.albumBound = 'true';
       card.addEventListener('click', function () {
-        openGalleryLightbox(Number(card.dataset.galleryAlbumIndex) || 0, 0);
+        selectGalleryAlbum(Number(card.dataset.galleryAlbumIndex) || 0);
       });
     });
+  }
+
+  function bindGalleryPhotoCards(scope) {
+    (scope || document).querySelectorAll('[data-gallery-photo-index]').forEach(function (card) {
+      if (card.dataset.photoBound === 'true') return;
+      card.dataset.photoBound = 'true';
+      card.addEventListener('click', function () {
+        openGalleryLightbox(
+          Number(card.dataset.galleryAlbumIndex) || 0,
+          Number(card.dataset.galleryPhotoIndex) || 0
+        );
+      });
+    });
+  }
+
+  function renderGalleryCarousels() {
+    const photoTrack = document.getElementById('gallery-photo-track');
+    const albumTrack = document.getElementById('gallery-album-track');
+    if (!photoTrack || !albumTrack) return;
+
+    galleryFlatPhotos = flattenGalleryPhotos();
+
+    photoTrack.innerHTML = galleryFlatPhotos.map(function (photo) {
+      const label = photo.caption || photo.albumName + ' photo';
+      return '' +
+        '<button class="gallery-photo-slide embla__slide" type="button" data-gallery-album-index="' + photo.albumIndex + '" data-gallery-photo-index="' + photo.photoIndex + '" aria-label="Open ' + escapeHtml(label) + '">' +
+          '<span class="gallery-photo-card">' +
+            '<img class="gallery-photo-image" src="' + imageSrc(photo.filename) + '" alt="' + escapeHtml(label) + '" loading="lazy" />' +
+            '<span class="gallery-photo-meta">' +
+              '<span class="gallery-photo-album">' + escapeHtml(photo.albumName) + '</span>' +
+              (photo.caption ? '<span class="gallery-photo-caption">' + escapeHtml(photo.caption) + '</span>' : '') +
+            '</span>' +
+          '</span>' +
+        '</button>';
+    }).join('');
+
+    albumTrack.innerHTML = galleryAlbums.map(function (album, albumIndex) {
+      const count = galleryPhotoCount(album);
+      const name = album.name || 'Album';
+      return '' +
+        '<button class="gallery-album-slide embla__slide" type="button" data-gallery-album-index="' + albumIndex + '" aria-pressed="false">' +
+          '<span class="gallery-album-thumb">' +
+            '<img class="gallery-album-image" src="' + imageSrc(albumCover(album)) + '" alt="' + escapeHtml(name) + ' album cover" loading="lazy" />' +
+          '</span>' +
+          '<span class="gallery-album-info">' +
+            '<span class="gallery-album-title">' + escapeHtml(name) + '</span>' +
+            '<span class="gallery-album-count">' + escapeHtml(formatPhotoCount(count)) + '</span>' +
+          '</span>' +
+        '</button>';
+    }).join('');
+
+    bindGalleryPhotoCards(photoTrack);
+    bindGalleryAlbumCards(albumTrack);
+    attachGalleryFallbacks(document.getElementById('gallery'));
+    initGalleryCarousels();
+    updateSelectedGalleryAlbum(0);
+  }
+
+  function initGalleryCarousels() {
+    if (typeof EmblaCarousel !== 'function') return;
+
+    const photoViewport = document.querySelector('#gallery-photo-carousel .embla__viewport');
+    const albumViewport = document.querySelector('#gallery-album-carousel .embla__viewport');
+
+    if (photoViewport && !galleryPhotoEmbla && galleryFlatPhotos.length) {
+      const photoPlugins = [];
+
+      if (typeof EmblaCarouselAutoScroll === 'function' && galleryFlatPhotos.length > 1) {
+        photoPlugins.push(EmblaCarouselAutoScroll({
+          speed: 0.7,
+          startDelay: 700,
+          stopOnInteraction: false,
+          stopOnMouseEnter: true,
+          stopOnFocusIn: true
+        }));
+      }
+
+      galleryPhotoEmbla = EmblaCarousel(photoViewport, {
+        align: 'start',
+        loop: galleryFlatPhotos.length > 2,
+        dragFree: true,
+        containScroll: false
+      }, photoPlugins);
+
+      galleryPhotoEmbla.on('select', syncSelectedGalleryAlbum);
+      galleryPhotoEmbla.on('reInit', syncSelectedGalleryAlbum);
+      syncSelectedGalleryAlbum();
+    }
+
+    if (albumViewport && !galleryAlbumEmbla) {
+      galleryAlbumEmbla = EmblaCarousel(albumViewport, {
+        align: 'start',
+        dragFree: true,
+        containScroll: 'trimSnaps'
+      });
+
+      bindAlbumCarouselControls();
+    }
+  }
+
+  function bindAlbumCarouselControls() {
+    const prev = document.getElementById('gallery-album-prev');
+    const next = document.getElementById('gallery-album-next');
+    if (!galleryAlbumEmbla || !prev || !next || prev.dataset.carouselBound === 'true') return;
+
+    prev.dataset.carouselBound = 'true';
+    next.dataset.carouselBound = 'true';
+
+    function updateControls() {
+      prev.disabled = !galleryAlbumEmbla.canScrollPrev();
+      next.disabled = !galleryAlbumEmbla.canScrollNext();
+    }
+
+    prev.addEventListener('click', function () { galleryAlbumEmbla.scrollPrev(); });
+    next.addEventListener('click', function () { galleryAlbumEmbla.scrollNext(); });
+    galleryAlbumEmbla.on('select', updateControls);
+    galleryAlbumEmbla.on('reInit', updateControls);
+    updateControls();
+  }
+
+  function syncSelectedGalleryAlbum() {
+    if (!galleryPhotoEmbla || !galleryFlatPhotos.length) return;
+    const photo = galleryFlatPhotos[galleryPhotoEmbla.selectedScrollSnap()];
+    if (photo) updateSelectedGalleryAlbum(photo.albumIndex);
+  }
+
+  function selectGalleryAlbum(albumIndex) {
+    updateSelectedGalleryAlbum(albumIndex);
+
+    const firstPhotoIndex = galleryFlatPhotos.findIndex(function (photo) {
+      return photo.albumIndex === albumIndex;
+    });
+
+    if (firstPhotoIndex >= 0 && galleryPhotoEmbla) {
+      galleryPhotoEmbla.scrollTo(firstPhotoIndex);
+    }
+  }
+
+  function updateSelectedGalleryAlbum(albumIndex) {
+    document.querySelectorAll('#gallery-album-track [data-gallery-album-index]').forEach(function (button) {
+      const selected = Number(button.dataset.galleryAlbumIndex) === albumIndex;
+      button.classList.toggle('is-selected', selected);
+      button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+    });
+
+    if (galleryAlbumEmbla) {
+      galleryAlbumEmbla.scrollTo(albumIndex);
+    }
   }
 
   function ensureGalleryLightbox() {
@@ -302,7 +491,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (event.key === 'ArrowRight') moveGalleryPhoto(1);
   });
 
-  bindGalleryAlbumCards(document);
+  renderGalleryCarousels();
 
   /* ── LEAFLET MAP ───────────────────────────────────────── */
   function initMap() {
