@@ -889,6 +889,13 @@ html.dark .btn-cv:hover {
   color: var(--ochre);
 }
 
+.pub-summary {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.65;
+  margin-bottom: 8px;
+}
+
 .pub-type {
   font-size: 12px;
   color: var(--text-muted);
