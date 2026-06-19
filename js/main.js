@@ -28,6 +28,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
   const galleryFallbackColors = ['e8dfc9', 'd8e2d4', 'cfd7c3', 'efe3c5', 'dde4d6', 'e5dcc5'];
+  const citationDoiList = [
+    '10.1016/j.gecco.2026.e04072',
+    '10.1163/14219980-bja10052',
+    '10.1590/S1984-4689.v42.e24047',
+    '10.13140/RG.2.2.12418.39369'
+  ];
   const staticMapMarkers = [
     { lat: 23.7337, lng: 90.3925, title: 'Jagannath University, Dhaka', desc: 'Home institution — BSc & MSc in Zoology' },
     { lat: 21.9497, lng: 89.1833, title: 'Sundarbans', desc: 'Mangrove biodiversity & field ecology research' },
@@ -63,6 +69,51 @@ document.addEventListener('DOMContentLoaded', function () {
   let galleryFlatPhotos = [];
 
   const navbar = document.getElementById('navbar');
+
+  function updateCitationCount(count) {
+    document.querySelectorAll('[data-citation-count]').forEach(function (el) {
+      el.textContent = count.toLocaleString();
+      el.setAttribute('title', 'Total citation count');
+    });
+  }
+
+  function currentCitationCount() {
+    const el = document.querySelector('[data-citation-count]');
+    if (!el) return 0;
+    const count = Number(String(el.textContent || '').replace(/,/g, ''));
+    return Number.isFinite(count) ? count : 0;
+  }
+
+  function fetchCitationCountForDoi(doi) {
+    const url = 'https://api.crossref.org/works/' + encodeURIComponent(doi) + '?mailto=sadiaafrinshimu7%40gmail.com';
+
+    return fetch(url, { cache: 'no-store', headers: { Accept: 'application/json' } })
+      .then(function (response) {
+        if (!response.ok) return null;
+        return response.json();
+      })
+      .then(function (data) {
+        const count = data && data.message ? Number(data.message['is-referenced-by-count']) : NaN;
+        return Number.isFinite(count) ? count : null;
+      })
+      .catch(function () {
+        return null;
+      });
+  }
+
+  function initDynamicCitationCount() {
+    if (typeof fetch !== 'function' || !document.querySelector('[data-citation-count]')) return;
+
+    Promise.all(citationDoiList.map(fetchCitationCountForDoi)).then(function (counts) {
+      const validCounts = counts.filter(function (count) { return Number.isFinite(count); });
+      if (!validCounts.length) return;
+
+      const total = validCounts.reduce(function (sum, count) { return sum + count; }, 0);
+      updateCitationCount(Math.max(currentCitationCount(), total));
+    });
+  }
+
+  initDynamicCitationCount();
 
   (function initDarkMode() {
     var btn = document.getElementById('dark-toggle');
