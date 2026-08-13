@@ -35,11 +35,13 @@ document.addEventListener('DOMContentLoaded', function () {
     '10.13140/RG.2.2.12418.39369'
   ];
   const staticMapMarkers = [
-    { lat: 23.7337, lng: 90.3925, title: 'Jagannath University, Dhaka', desc: 'Home institution — BSc & MSc in Zoology' },
-    { lat: 21.9497, lng: 89.1833, title: 'Sundarbans', desc: 'Mangrove biodiversity & field ecology research' },
-    { lat: 22.8456, lng: 89.5403, title: 'Jessore / Southwest Bangladesh', desc: 'Primate survey and conservation outreach area' },
-    { lat: 24.3745, lng: 88.6042, title: 'Rajshahi Division', desc: 'Biodiversity field documentation site' },
-    { lat: 22.3569, lng: 91.7832, title: 'Chittagong Hill Tracts', desc: 'Forest primate habitat survey area' }
+    { lat: 24.325059045496882, lng: 91.78712980408851, title: 'Jagannath University, Dhaka', desc: 'Home institution — BSc & MSc in Zoology' },
+    { lat: 24.12465911660991, lng: 91.44455314640041, title: 'Sundarbans', desc: 'Mangrove biodiversity & field ecology research' },
+    { lat: 23.098635522841708, lng: 91.87240259824227, title: 'Jessore / Southwest Bangladesh', desc: 'Primate survey and conservation outreach area' },
+    { lat: 24.256927332126548, lng: 91.91332985981806, title: 'Rajshahi Division', desc: 'Biodiversity field documentation site' },
+    { lat: 24.18899395891292, lng: 90.72972505222265, title: 'Chittagong Hill Tracts', desc: 'Forest primate habitat survey area' },
+    { lat: 21.858937756871974, lng: 89.77017212647436, title: 'Field Location 6', desc: 'Field research location' },
+    { lat: 22.469970072887563, lng: 92.23083391525459, title: 'Field Location 7', desc: 'Field research location' }
   ];
 
   /* ── NAVBAR SCROLL BEHAVIOR ────────────────────────────── */
@@ -51,12 +53,7 @@ document.addEventListener('DOMContentLoaded', function () {
       cover_filename: 'gallery-1.jpg',
       created_at: '2026-05-22T09:54:47.710Z',
       photos: [
-        { id: 'gal1', filename: 'gallery-1.jpg', caption: '[Caption]' },
-        { id: 'gal2', filename: 'gallery-2.jpg', caption: '[Caption]' },
-        { id: 'gal3', filename: 'gallery-3.jpg', caption: '[Caption]' },
-        { id: 'gal4', filename: 'gallery-4.jpg', caption: '[Caption]' },
-        { id: 'gal5', filename: 'gallery-5.jpg', caption: '[Caption]' },
-        { id: 'gal6', filename: 'gallery-6.jpg', caption: '[Caption]' }
+        { id: 'gal1', filename: 'gallery-1.jpg', caption: '' }
       ]
     }
   ];
@@ -202,8 +199,12 @@ document.addEventListener('DOMContentLoaded', function () {
   setTimeout(revealHero, 80);
 
   /* ── ACTIVE NAV LINK HIGHLIGHT ─────────────────────────── */
-  const sections = document.querySelectorAll('section[id], div[id]');
   const navAnchors = document.querySelectorAll('.nav-links a');
+  const sections = Array.from(navAnchors)
+    .map(function (anchor) {
+      return document.querySelector(anchor.getAttribute('href'));
+    })
+    .filter(Boolean);
 
   const sectionObserver = new IntersectionObserver(
     function (entries) {
