@@ -55,6 +55,29 @@ document.addEventListener('DOMContentLoaded', function () {
       photos: [
         { id: 'gal1', filename: 'gallery-1.jpg', caption: '' }
       ]
+    },
+    {
+      id: 'school-days',
+      name: 'School Days',
+      featured: false,
+      cover_filename: 'gallery/School Days/33160803-0524-47f9-b546-e401e11e4194.jpg',
+      photos: [
+        {
+          id: 'school-days-1',
+          filename: 'gallery/School Days/33160803-0524-47f9-b546-e401e11e4194.jpg',
+          caption: 'Cambridge English Certificate Distribution Ceremony at Oxford International School'
+        },
+        {
+          id: 'school-days-2',
+          filename: 'gallery/School Days/9df92fc6-b8a3-42ed-bc20-747f949509e0.jpg',
+          caption: 'With colleagues at the certificate distribution ceremony'
+        },
+        {
+          id: 'school-days-3',
+          filename: 'gallery/School Days/c14dc910-d31a-47cc-b908-e56c13b1066f.jpg',
+          caption: 'School colleagues at Oxford International School'
+        }
+      ]
     }
   ];
   let galleryAlbums = staticGalleryAlbums;
