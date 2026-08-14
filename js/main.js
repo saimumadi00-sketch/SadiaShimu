@@ -47,16 +47,6 @@ document.addEventListener('DOMContentLoaded', function () {
   /* ── NAVBAR SCROLL BEHAVIOR ────────────────────────────── */
   const staticGalleryAlbums = [
     {
-      id: '77c9c32a-9931-4ad7-8117-d6c5690de401',
-      name: 'General',
-      featured: true,
-      cover_filename: 'gallery-1.jpg',
-      created_at: '2026-05-22T09:54:47.710Z',
-      photos: [
-        { id: 'gal1', filename: 'gallery-1.jpg', caption: '' }
-      ]
-    },
-    {
       id: 'school-days',
       name: 'School Days',
       featured: false,
@@ -85,22 +75,22 @@ document.addEventListener('DOMContentLoaded', function () {
       featured: false,
       cover_filename: 'gallery/fieldwork/471190887_579555698136450_3964796315751664654_n.jpg',
       photos: [
-        { id: 'fieldwork-1', filename: 'gallery/fieldwork/471190887_579555698136450_3964796315751664654_n.jpg', caption: '' },
-        { id: 'fieldwork-2', filename: 'gallery/fieldwork/471455434_578863654872321_7998168355185712414_n.jpg', caption: '' },
-        { id: 'fieldwork-3', filename: 'gallery/fieldwork/477715842_1030281329128968_3696121394535095277_n.jpg', caption: '' },
-        { id: 'fieldwork-4', filename: 'gallery/fieldwork/480742873_625976420161044_8007520573794874075_n.jpg', caption: '' },
-        { id: 'fieldwork-5', filename: 'gallery/fieldwork/480767954_1043648221125612_5395975836019803450_n.jpg', caption: '' },
-        { id: 'fieldwork-6', filename: 'gallery/fieldwork/481021032_629384809820205_7454318602968944811_n.jpg', caption: '' },
-        { id: 'fieldwork-7', filename: 'gallery/fieldwork/481300144_629980929760593_8855543893349181594_n.jpg', caption: '' },
-        { id: 'fieldwork-8', filename: 'gallery/fieldwork/481336909_625976390161047_7629689505268399396_n.jpg', caption: '' },
-        { id: 'fieldwork-9', filename: 'gallery/fieldwork/481337804_629384846486868_5247302954774525753_n.jpg', caption: '' },
-        { id: 'fieldwork-10', filename: 'gallery/fieldwork/481450003_629980976427255_2454263935057776895_n.jpg', caption: '' },
-        { id: 'fieldwork-11', filename: 'gallery/fieldwork/481669987_1043646234459144_1447271907081972586_n.jpg', caption: '' },
-        { id: 'fieldwork-12', filename: 'gallery/fieldwork/481894933_629980966427256_7679441551025105185_n.jpg', caption: '' },
-        { id: 'fieldwork-13', filename: 'gallery/fieldwork/481994453_629977473094272_8081294090276819323_n.jpg', caption: '' },
-        { id: 'fieldwork-14', filename: 'gallery/fieldwork/482273740_636074969151189_2906079613753886082_n.jpg', caption: '' },
-        { id: 'fieldwork-15', filename: 'gallery/fieldwork/483101920_636074929151193_401811774325023624_n.jpg', caption: '' },
-        { id: 'fieldwork-16', filename: 'gallery/fieldwork/493354144_1237194795076559_5292426569247668420_n.jpg', caption: '' }
+        { id: 'fieldwork-1', filename: 'gallery/fieldwork/471190887_579555698136450_3964796315751664654_n.jpg', caption: 'Field research team in a forest habitat' },
+        { id: 'fieldwork-2', filename: 'gallery/fieldwork/471455434_578863654872321_7998168355185712414_n.jpg', caption: 'Research team during a forest survey' },
+        { id: 'fieldwork-3', filename: 'gallery/fieldwork/477715842_1030281329128968_3696121394535095277_n.jpg', caption: 'Community members and researchers at a field site' },
+        { id: 'fieldwork-4', filename: 'gallery/fieldwork/480742873_625976420161044_8007520573794874075_n.jpg', caption: 'Collecting survey data during night fieldwork' },
+        { id: 'fieldwork-5', filename: 'gallery/fieldwork/480767954_1043648221125612_5395975836019803450_n.jpg', caption: 'Plumploris Bangladesh Project field team' },
+        { id: 'fieldwork-6', filename: 'gallery/fieldwork/481021032_629384809820205_7454318602968944811_n.jpg', caption: 'Recording field information with a local participant' },
+        { id: 'fieldwork-7', filename: 'gallery/fieldwork/481300144_629980929760593_8855543893349181594_n.jpg', caption: 'Community engagement during fieldwork' },
+        { id: 'fieldwork-8', filename: 'gallery/fieldwork/481336909_625976390161047_7629689505268399396_n.jpg', caption: 'Reviewing survey notes during a night assessment' },
+        { id: 'fieldwork-9', filename: 'gallery/fieldwork/481337804_629384846486868_5247302954774525753_n.jpg', caption: 'Conservation outreach with local children' },
+        { id: 'fieldwork-10', filename: 'gallery/fieldwork/481450003_629980976427255_2454263935057776895_n.jpg', caption: 'Plumploris Bangladesh Project team in the field' },
+        { id: 'fieldwork-11', filename: 'gallery/fieldwork/481669987_1043646234459144_1447271907081972586_n.jpg', caption: 'Field researchers during a community survey' },
+        { id: 'fieldwork-12', filename: 'gallery/fieldwork/481894933_629980966427256_7679441551025105185_n.jpg', caption: 'Plumploris Bangladesh Project group photo' },
+        { id: 'fieldwork-13', filename: 'gallery/fieldwork/481994453_629977473094272_8081294090276819323_n.jpg', caption: 'Conservation awareness session with student posters' },
+        { id: 'fieldwork-14', filename: 'gallery/fieldwork/482273740_636074969151189_2906079613753886082_n.jpg', caption: 'Community consultation during field research' },
+        { id: 'fieldwork-15', filename: 'gallery/fieldwork/483101920_636074929151193_401811774325023624_n.jpg', caption: 'Outdoor conservation awareness activity' },
+        { id: 'fieldwork-16', filename: 'gallery/fieldwork/493354144_1237194795076559_5292426569247668420_n.jpg', caption: 'Field team documenting local biodiversity' }
       ]
     },
     {
@@ -109,11 +99,11 @@ document.addEventListener('DOMContentLoaded', function () {
       featured: false,
       cover_filename: 'gallery/Club works/483506512_636662239092462_3426180495455708919_n.jpg',
       photos: [
-        { id: 'club-works-1', filename: 'gallery/Club works/483506512_636662239092462_3426180495455708919_n.jpg', caption: '' },
-        { id: 'club-works-2', filename: 'gallery/Club works/483509251_636662422425777_138279806094210950_n.jpg', caption: '' },
-        { id: 'club-works-3', filename: 'gallery/Club works/483921508_636662019092484_1952603686340115779_n.jpg', caption: '' },
-        { id: 'club-works-4', filename: 'gallery/Club works/484901875_639066385518714_7444917612082588859_n.jpg', caption: '' },
-        { id: 'club-works-5', filename: 'gallery/Club works/485349485_641421615283191_3062818322886490691_n.jpg', caption: '' }
+        { id: 'club-works-1', filename: 'gallery/Club works/483506512_636662239092462_3426180495455708919_n.jpg', caption: 'Zoology club team at a biodiversity exhibition' },
+        { id: 'club-works-2', filename: 'gallery/Club works/483509251_636662422425777_138279806094210950_n.jpg', caption: 'Visitors exploring the club exhibition' },
+        { id: 'club-works-3', filename: 'gallery/Club works/483921508_636662019092484_1952603686340115779_n.jpg', caption: 'Club members at the biodiversity display' },
+        { id: 'club-works-4', filename: 'gallery/Club works/484901875_639066385518714_7444917612082588859_n.jpg', caption: 'World Wildlife Day 2025 club activity' },
+        { id: 'club-works-5', filename: 'gallery/Club works/485349485_641421615283191_3062818322886490691_n.jpg', caption: 'Club members at an academic event' }
       ]
     },
     {
@@ -122,18 +112,19 @@ document.addEventListener('DOMContentLoaded', function () {
       featured: false,
       cover_filename: 'gallery/Working with kids/481257817_625627506862602_7356264248833204603_n.jpg',
       photos: [
-        { id: 'working-with-kids-1', filename: 'gallery/Working with kids/481257817_625627506862602_7356264248833204603_n.jpg', caption: '' },
-        { id: 'working-with-kids-2', filename: 'gallery/Working with kids/482318347_625627246862628_1404960891638882727_n.jpg', caption: '' },
-        { id: 'working-with-kids-3', filename: 'gallery/Working with kids/666255244_945262591565757_7678362277743571367_n.jpg', caption: '' },
-        { id: 'working-with-kids-4', filename: 'gallery/Working with kids/666999714_945262858232397_859077247061779271_n.jpg', caption: '' },
-        { id: 'working-with-kids-5', filename: 'gallery/Working with kids/667665725_945263034899046_8904973512488973943_n.jpg', caption: '' },
-        { id: 'working-with-kids-6', filename: 'gallery/Working with kids/668138568_945263168232366_5209873077202316413_n.jpg', caption: '' },
-        { id: 'working-with-kids-7', filename: 'gallery/Working with kids/668554493_945262781565738_3416827987365471380_n.jpg', caption: '' },
-        { id: 'working-with-kids-8', filename: 'gallery/Working with kids/668814300_945262401565776_5080951708331844442_n.jpg', caption: '' }
+        { id: 'working-with-kids-1', filename: 'gallery/Working with kids/481257817_625627506862602_7356264248833204603_n.jpg', caption: 'Conservation education session with students' },
+        { id: 'working-with-kids-2', filename: 'gallery/Working with kids/482318347_625627246862628_1404960891638882727_n.jpg', caption: 'Outreach team during a school program' },
+        { id: 'working-with-kids-3', filename: 'gallery/Working with kids/666255244_945262591565757_7678362277743571367_n.jpg', caption: 'Interactive conservation activity with children' },
+        { id: 'working-with-kids-4', filename: 'gallery/Working with kids/666999714_945262858232397_859077247061779271_n.jpg', caption: 'Outdoor learning activity with schoolchildren' },
+        { id: 'working-with-kids-5', filename: 'gallery/Working with kids/667665725_945263034899046_8904973512488973943_n.jpg', caption: 'Group photo after the conservation program' },
+        { id: 'working-with-kids-6', filename: 'gallery/Working with kids/668138568_945263168232366_5209873077202316413_n.jpg', caption: 'Preparing educational materials for the event' },
+        { id: 'working-with-kids-7', filename: 'gallery/Working with kids/668554493_945262781565738_3416827987365471380_n.jpg', caption: 'Students taking part in an outdoor activity' },
+        { id: 'working-with-kids-8', filename: 'gallery/Working with kids/668814300_945262401565776_5080951708331844442_n.jpg', caption: 'Students and volunteers at the program venue' }
       ]
     }
   ];
   let galleryAlbums = staticGalleryAlbums;
+  let selectedGalleryAlbumIndex = 0;
   let activeAlbumIndex = 0;
   let activePhotoIndex = 0;
   let touchStartX = null;
@@ -410,7 +401,7 @@ document.addEventListener('DOMContentLoaded', function () {
       const count = galleryPhotoCount(album);
       const name = album.name || 'Album';
       return '' +
-        '<button class="gallery-album-slide embla__slide" type="button" data-gallery-album-index="' + albumIndex + '" aria-pressed="false">' +
+        '<button class="gallery-album-slide embla__slide" type="button" data-gallery-album-index="' + albumIndex + '" aria-controls="gallery-photo-carousel" aria-pressed="false">' +
           '<span class="gallery-album-thumb">' +
             '<img class="gallery-album-image" src="' + imageSrc(albumCover(album)) + '" alt="' + escapeHtml(name) + ' album cover" loading="lazy" />' +
           '</span>' +
@@ -425,6 +416,7 @@ document.addEventListener('DOMContentLoaded', function () {
     bindGalleryAlbumCards(albumTrack);
     attachGalleryFallbacks(document.getElementById('gallery'));
     initGalleryCarousels();
+    bindAlbumCarouselControls();
     updateSelectedGalleryAlbum(0);
   }
 
@@ -466,28 +458,29 @@ document.addEventListener('DOMContentLoaded', function () {
         containScroll: 'trimSnaps'
       });
 
-      bindAlbumCarouselControls();
     }
   }
 
   function bindAlbumCarouselControls() {
     const prev = document.getElementById('gallery-album-prev');
     const next = document.getElementById('gallery-album-next');
-    if (!galleryAlbumEmbla || !prev || !next || prev.dataset.carouselBound === 'true') return;
+    if (!prev || !next || prev.dataset.carouselBound === 'true') return;
 
     prev.dataset.carouselBound = 'true';
     next.dataset.carouselBound = 'true';
 
-    function updateControls() {
-      prev.disabled = !galleryAlbumEmbla.canScrollPrev();
-      next.disabled = !galleryAlbumEmbla.canScrollNext();
-    }
+    prev.disabled = galleryAlbums.length < 2;
+    next.disabled = galleryAlbums.length < 2;
 
-    prev.addEventListener('click', function () { galleryAlbumEmbla.scrollPrev(); });
-    next.addEventListener('click', function () { galleryAlbumEmbla.scrollNext(); });
-    galleryAlbumEmbla.on('select', updateControls);
-    galleryAlbumEmbla.on('reInit', updateControls);
-    updateControls();
+    prev.addEventListener('click', function () {
+      const previousIndex = (selectedGalleryAlbumIndex - 1 + galleryAlbums.length) % galleryAlbums.length;
+      selectGalleryAlbum(previousIndex, false);
+    });
+
+    next.addEventListener('click', function () {
+      const nextIndex = (selectedGalleryAlbumIndex + 1) % galleryAlbums.length;
+      selectGalleryAlbum(nextIndex, false);
+    });
   }
 
   function syncSelectedGalleryAlbum() {
@@ -496,19 +489,45 @@ document.addEventListener('DOMContentLoaded', function () {
     if (photo) updateSelectedGalleryAlbum(photo.albumIndex);
   }
 
-  function selectGalleryAlbum(albumIndex) {
-    updateSelectedGalleryAlbum(albumIndex);
-
+  function selectGalleryAlbum(albumIndex, scrollIntoView) {
     const firstPhotoIndex = galleryFlatPhotos.findIndex(function (photo) {
       return photo.albumIndex === albumIndex;
     });
 
-    if (firstPhotoIndex >= 0 && galleryPhotoEmbla) {
-      galleryPhotoEmbla.scrollTo(firstPhotoIndex);
+    if (firstPhotoIndex < 0) return;
+
+    if (galleryPhotoEmbla && typeof galleryPhotoEmbla.plugins === 'function') {
+      const plugins = galleryPhotoEmbla.plugins();
+      if (plugins.autoScroll && typeof plugins.autoScroll.stop === 'function') {
+        plugins.autoScroll.stop();
+      }
+    }
+
+    updateSelectedGalleryAlbum(albumIndex);
+
+    if (galleryPhotoEmbla) {
+      galleryPhotoEmbla.scrollTo(firstPhotoIndex, true);
+    } else {
+      const firstPhoto = document.querySelector(
+        '#gallery-photo-track [data-gallery-album-index="' + albumIndex + '"][data-gallery-photo-index="0"]'
+      );
+      const viewport = firstPhoto && firstPhoto.closest('.embla__viewport');
+      if (firstPhoto && viewport) {
+        viewport.scrollTo({ left: firstPhoto.offsetLeft, behavior: 'smooth' });
+      }
+    }
+
+    const photoCarousel = document.getElementById('gallery-photo-carousel');
+    if (photoCarousel && scrollIntoView !== false) {
+      const navOffset = (navbar ? navbar.offsetHeight : 0) + 20;
+      const top = photoCarousel.getBoundingClientRect().top + window.pageYOffset - navOffset;
+      window.scrollTo({ top: top, behavior: 'smooth' });
     }
   }
 
   function updateSelectedGalleryAlbum(albumIndex) {
+    selectedGalleryAlbumIndex = albumIndex;
+
     document.querySelectorAll('#gallery-album-track [data-gallery-album-index]').forEach(function (button) {
       const selected = Number(button.dataset.galleryAlbumIndex) === albumIndex;
       button.classList.toggle('is-selected', selected);
