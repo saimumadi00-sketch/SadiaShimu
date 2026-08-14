@@ -78,6 +78,59 @@ document.addEventListener('DOMContentLoaded', function () {
           caption: 'School colleagues at Oxford International School'
         }
       ]
+    },
+    {
+      id: 'fieldwork',
+      name: 'Fieldwork',
+      featured: false,
+      cover_filename: 'gallery/fieldwork/471190887_579555698136450_3964796315751664654_n.jpg',
+      photos: [
+        { id: 'fieldwork-1', filename: 'gallery/fieldwork/471190887_579555698136450_3964796315751664654_n.jpg', caption: '' },
+        { id: 'fieldwork-2', filename: 'gallery/fieldwork/471455434_578863654872321_7998168355185712414_n.jpg', caption: '' },
+        { id: 'fieldwork-3', filename: 'gallery/fieldwork/477715842_1030281329128968_3696121394535095277_n.jpg', caption: '' },
+        { id: 'fieldwork-4', filename: 'gallery/fieldwork/480742873_625976420161044_8007520573794874075_n.jpg', caption: '' },
+        { id: 'fieldwork-5', filename: 'gallery/fieldwork/480767954_1043648221125612_5395975836019803450_n.jpg', caption: '' },
+        { id: 'fieldwork-6', filename: 'gallery/fieldwork/481021032_629384809820205_7454318602968944811_n.jpg', caption: '' },
+        { id: 'fieldwork-7', filename: 'gallery/fieldwork/481300144_629980929760593_8855543893349181594_n.jpg', caption: '' },
+        { id: 'fieldwork-8', filename: 'gallery/fieldwork/481336909_625976390161047_7629689505268399396_n.jpg', caption: '' },
+        { id: 'fieldwork-9', filename: 'gallery/fieldwork/481337804_629384846486868_5247302954774525753_n.jpg', caption: '' },
+        { id: 'fieldwork-10', filename: 'gallery/fieldwork/481450003_629980976427255_2454263935057776895_n.jpg', caption: '' },
+        { id: 'fieldwork-11', filename: 'gallery/fieldwork/481669987_1043646234459144_1447271907081972586_n.jpg', caption: '' },
+        { id: 'fieldwork-12', filename: 'gallery/fieldwork/481894933_629980966427256_7679441551025105185_n.jpg', caption: '' },
+        { id: 'fieldwork-13', filename: 'gallery/fieldwork/481994453_629977473094272_8081294090276819323_n.jpg', caption: '' },
+        { id: 'fieldwork-14', filename: 'gallery/fieldwork/482273740_636074969151189_2906079613753886082_n.jpg', caption: '' },
+        { id: 'fieldwork-15', filename: 'gallery/fieldwork/483101920_636074929151193_401811774325023624_n.jpg', caption: '' },
+        { id: 'fieldwork-16', filename: 'gallery/fieldwork/493354144_1237194795076559_5292426569247668420_n.jpg', caption: '' }
+      ]
+    },
+    {
+      id: 'club-works',
+      name: 'Club Works',
+      featured: false,
+      cover_filename: 'gallery/Club works/483506512_636662239092462_3426180495455708919_n.jpg',
+      photos: [
+        { id: 'club-works-1', filename: 'gallery/Club works/483506512_636662239092462_3426180495455708919_n.jpg', caption: '' },
+        { id: 'club-works-2', filename: 'gallery/Club works/483509251_636662422425777_138279806094210950_n.jpg', caption: '' },
+        { id: 'club-works-3', filename: 'gallery/Club works/483921508_636662019092484_1952603686340115779_n.jpg', caption: '' },
+        { id: 'club-works-4', filename: 'gallery/Club works/484901875_639066385518714_7444917612082588859_n.jpg', caption: '' },
+        { id: 'club-works-5', filename: 'gallery/Club works/485349485_641421615283191_3062818322886490691_n.jpg', caption: '' }
+      ]
+    },
+    {
+      id: 'working-with-kids',
+      name: 'Working with Kids',
+      featured: false,
+      cover_filename: 'gallery/Working with kids/481257817_625627506862602_7356264248833204603_n.jpg',
+      photos: [
+        { id: 'working-with-kids-1', filename: 'gallery/Working with kids/481257817_625627506862602_7356264248833204603_n.jpg', caption: '' },
+        { id: 'working-with-kids-2', filename: 'gallery/Working with kids/482318347_625627246862628_1404960891638882727_n.jpg', caption: '' },
+        { id: 'working-with-kids-3', filename: 'gallery/Working with kids/666255244_945262591565757_7678362277743571367_n.jpg', caption: '' },
+        { id: 'working-with-kids-4', filename: 'gallery/Working with kids/666999714_945262858232397_859077247061779271_n.jpg', caption: '' },
+        { id: 'working-with-kids-5', filename: 'gallery/Working with kids/667665725_945263034899046_8904973512488973943_n.jpg', caption: '' },
+        { id: 'working-with-kids-6', filename: 'gallery/Working with kids/668138568_945263168232366_5209873077202316413_n.jpg', caption: '' },
+        { id: 'working-with-kids-7', filename: 'gallery/Working with kids/668554493_945262781565738_3416827987365471380_n.jpg', caption: '' },
+        { id: 'working-with-kids-8', filename: 'gallery/Working with kids/668814300_945262401565776_5080951708331844442_n.jpg', caption: '' }
+      ]
     }
   ];
   let galleryAlbums = staticGalleryAlbums;
