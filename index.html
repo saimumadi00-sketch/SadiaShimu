@@ -19,13 +19,12 @@
   <link rel="alternate icon" href="/favicon.ico" />
   <link rel="canonical" href="https://sadia-shimu.vercel.app/" />
 
+  <meta name="color-scheme" content="light dark" />
   <script>
-    (function() {
-      var saved = localStorage.getItem('theme');
-      var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (saved === 'dark' || (!saved && prefersDark)) {
-        document.documentElement.classList.add('dark');
-      }
+    (function () {
+      var theme = window.matchMedia('(prefers-color-scheme: dark)');
+      document.documentElement.classList.toggle('dark', theme.matches);
+      document.documentElement.style.colorScheme = theme.matches ? 'dark' : 'light';
     })();
   </script>
 
@@ -67,10 +66,6 @@
         <a href="#skills">Skills</a>
         <a href="#contact">Contact</a>
       </nav>
-      <button class="dark-toggle" id="dark-toggle" aria-label="Toggle dark mode">
-        <i class="fa-solid fa-moon icon-moon"></i>
-        <i class="fa-solid fa-sun icon-sun"></i>
-      </button>
       <button class="nav-hamburger" id="hamburger" aria-label="Toggle menu">
         <span></span><span></span><span></span>
       </button>

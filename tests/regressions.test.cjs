@@ -101,3 +101,37 @@ test('reduced motion disables autoplay and animated carousel movement', () => {
   assert.equal(calls[0].plugins.length, 0);
   assert.ok(calls.every(call => call.opts.duration === 0));
 });
+
+test('system theme wins over saved preferences and tracks changes in both directions', () => {
+  const theme = { matches: true, addEventListener(name, callback) { assert.equal(name, 'change'); this.change = callback; } };
+  const classes = new Set();
+  const document = { documentElement: { classList: { toggle(name, value) { value ? classes.add(name) : classes.delete(name); } }, style: {} } };
+  const context = vm.createContext({ document, window: { matchMedia: () => theme }, localStorage: { getItem() { throw Error('Must not read saved theme'); }, setItem() { throw Error('Must not save theme'); } } });
+  vm.runInContext(section('  (function initDarkMode()', "  window.addEventListener('scroll'"), context);
+  assert.ok(classes.has('dark'));
+  assert.equal(document.documentElement.style.colorScheme, 'dark');
+  theme.matches = false; theme.change();
+  assert.ok(!classes.has('dark'));
+  assert.equal(document.documentElement.style.colorScheme, 'light');
+  theme.matches = true; theme.change();
+  assert.ok(classes.has('dark'));
+});
+
+test('body, highlighted text, and filled buttons meet normal-text contrast in both themes', () => {
+  const css = fs.readFileSync(require('node:path').join(__dirname, '../css/main.css'), 'utf8');
+  function luminance(color) {
+    const rgb = [1,3,5].map(i => parseInt(color.slice(i,i+2),16)/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4);
+    return rgb[0]*.2126+rgb[1]*.7152+rgb[2]*.0722;
+  }
+  function contrast(a,b) { const [lo,hi] = [luminance(a),luminance(b)].sort((a,b)=>a-b); return (hi+.05)/(lo+.05); }
+  const light = css.match(/:root\s*\{([^}]+)\}/)[1];
+  const dark = css.match(/html\.dark\s*\{([^}]+)\}/)[1];
+  function tokens(block) { return Object.fromEntries([...block.matchAll(/(--[\w-]+):\s*([^;]+);/g)].map(m=>[m[1],m[2].trim()])); }
+  for(const palette of [tokens(light),{...tokens(light),...tokens(dark)}]) {
+    function value(key) { const s=palette[key]; return s.startsWith('var(')?value(s.slice(4,-1)):s; }
+    for(const foreground of ['--text','--text-2','--text-muted','--accent']) {
+      for(const background of ['--bg','--bg-alt','--surface']) assert.ok(contrast(value(foreground),value(background))>=4.5,`${foreground} on ${background}`);
+    }
+    assert.ok(contrast(value('--on-accent'),value('--accent'))>=4.5);
+  }
+});
