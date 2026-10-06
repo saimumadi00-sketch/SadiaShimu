@@ -1,6 +1,6 @@
 /* ============================================================
    MST. SADIA AFRIN SHIMU — ACADEMIC PORTFOLIO
-   main.js — Navigation, scroll reveals, image fallbacks, Leaflet map
+   main.js — Navigation, theme preferences, image fallbacks, Leaflet map
    ============================================================ */
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -11,8 +11,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const citationDoiList = [
     '10.1016/j.gecco.2026.e04072',
     '10.1163/14219980-bja10052',
-    '10.1590/S1984-4689.v42.e24047',
-    '10.13140/RG.2.2.12418.39369'
+    '10.1590/S1984-4689.v42.e24047'
   ];
   const staticMapMarkers = [
     { lat: 24.325059045496882, lng: 91.78712980408851, title: 'Jagannath University, Dhaka', desc: 'Home institution — BSc & MSc in Zoology' },
@@ -29,7 +28,6 @@ document.addEventListener('DOMContentLoaded', function () {
     {
       id: 'school-days',
       name: 'School Days',
-      featured: false,
       cover_filename: 'gallery/School Days/33160803-0524-47f9-b546-e401e11e4194.jpg',
       photos: [
         {
@@ -52,7 +50,6 @@ document.addEventListener('DOMContentLoaded', function () {
     {
       id: 'fieldwork',
       name: 'Fieldwork',
-      featured: false,
       cover_filename: 'gallery/fieldwork/471190887_579555698136450_3964796315751664654_n.jpg',
       photos: [
         { id: 'fieldwork-1', filename: 'gallery/fieldwork/471190887_579555698136450_3964796315751664654_n.jpg', caption: 'Field research team in a forest habitat' },
@@ -76,7 +73,6 @@ document.addEventListener('DOMContentLoaded', function () {
     {
       id: 'club-works',
       name: 'Club Works',
-      featured: false,
       cover_filename: 'gallery/Club works/483506512_636662239092462_3426180495455708919_n.jpg',
       photos: [
         { id: 'club-works-1', filename: 'gallery/Club works/483506512_636662239092462_3426180495455708919_n.jpg', caption: 'Zoology club team at a biodiversity exhibition' },
@@ -89,7 +85,6 @@ document.addEventListener('DOMContentLoaded', function () {
     {
       id: 'working-with-kids',
       name: 'Working with Kids',
-      featured: false,
       cover_filename: 'gallery/Working with kids/481257817_625627506862602_7356264248833204603_n.jpg',
       photos: [
         { id: 'working-with-kids-1', filename: 'gallery/Working with kids/481257817_625627506862602_7356264248833204603_n.jpg', caption: 'Conservation education session with students' },
@@ -111,7 +106,6 @@ document.addEventListener('DOMContentLoaded', function () {
   let galleryTrigger = null;
   let galleryBackground = [];
   let previousBodyOverflow = '';
-  const initialCitationCount = currentCitationCount();
   let galleryPhotoEmbla = null;
   let galleryAlbumEmbla = null;
   let galleryFlatPhotos = [];
@@ -120,16 +114,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function updateCitationCount(count) {
     document.querySelectorAll('[data-citation-count]').forEach(function (el) {
-      el.textContent = count.toLocaleString();
-      el.setAttribute('title', 'Total citation count');
+      el.textContent = count === null ? '\u2014' : count.toLocaleString();
+      el.setAttribute('title', count === null ? 'Crossref citation count unavailable; please try again later' : 'Crossref citations across three journal articles');
     });
-  }
-
-  function currentCitationCount() {
-    const el = document.querySelector('[data-citation-count]');
-    if (!el) return 0;
-    const count = Number(String(el.textContent || '').replace(/,/g, ''));
-    return Number.isFinite(count) ? count : 0;
   }
 
   function fetchCitationCountForDoi(doi) {
@@ -153,11 +140,11 @@ document.addEventListener('DOMContentLoaded', function () {
     if (typeof fetch !== 'function' || !document.querySelector('[data-citation-count]')) return;
 
     Promise.all(citationDoiList.map(fetchCitationCountForDoi)).then(function (counts) {
-      const validCounts = counts.filter(function (count) { return Number.isFinite(count); });
-      if (!validCounts.length) return;
-
-      const total = validCounts.reduce(function (sum, count) { return sum + count; }, 0);
-      updateCitationCount(Math.max(initialCitationCount, total));
+      if (!counts.every(function (count) { return Number.isFinite(count) && count >= 0; })) {
+        updateCitationCount(null);
+        return;
+      }
+      updateCitationCount(counts.reduce(function (sum, count) { return sum + count; }, 0));
     });
   }
 
@@ -165,12 +152,39 @@ document.addEventListener('DOMContentLoaded', function () {
 
   (function initDarkMode() {
     const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
-    function applySystemTheme() {
-      document.documentElement.classList.toggle('dark', systemTheme.matches);
-      document.documentElement.style.colorScheme = systemTheme.matches ? 'dark' : 'light';
+    const modes = ['system', 'light', 'dark'];
+    const button = document.getElementById('theme-toggle');
+    const label = document.getElementById('theme-label');
+    const icon = document.getElementById('theme-icon');
+    let preference = 'system';
+    try { preference = localStorage.getItem('portfolio-theme') || 'system'; } catch (e) {}
+    if (!modes.includes(preference)) preference = 'system';
+    function applyTheme() {
+      const dark = preference === 'dark' || (preference === 'system' && systemTheme.matches);
+      document.documentElement.classList.toggle('dark', dark);
+      document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+      const name = preference[0].toUpperCase() + preference.slice(1);
+      const next = modes[(modes.indexOf(preference) + 1) % modes.length];
+      const description = 'Theme: ' + name + '. Switch to ' + next[0].toUpperCase() + next.slice(1);
+      if (label) label.textContent = name;
+      if (icon) icon.textContent = { system: '\u25d0', light: '\u2600', dark: '\u263e' }[preference];
+      if (button) {
+        button.setAttribute('aria-label', description);
+        button.setAttribute('title', description);
+      }
     }
-    applySystemTheme();
-    systemTheme.addEventListener('change', applySystemTheme);
+    applyTheme();
+    systemTheme.addEventListener('change', applyTheme);
+    if (button) button.addEventListener('click', function () {
+      preference = modes[(modes.indexOf(preference) + 1) % modes.length];
+      try { localStorage.setItem('portfolio-theme', preference); } catch (e) {}
+      applyTheme();
+    });
+    window.addEventListener('storage', function (event) {
+      if (event.key !== 'portfolio-theme' && event.key !== null) return;
+      preference = modes.includes(event.newValue) ? event.newValue : 'system';
+      applyTheme();
+    });
   })();
 
   window.addEventListener('scroll', function () {
@@ -199,6 +213,14 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     });
 
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && navLinks.classList.contains('open')) {
+        navLinks.classList.remove('open');
+        hamburger.setAttribute('aria-expanded', 'false');
+        hamburger.focus();
+      }
+    });
+
     // Close menu on outside click
     document.addEventListener('click', function (e) {
       if (!navbar.contains(e.target)) {
@@ -207,38 +229,6 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
   }
-
-  /* ── SCROLL REVEAL ─────────────────────────────────────── */
-  const revealElements = document.querySelectorAll('.reveal');
-
-  // Kick off hero reveals immediately (already in view on load)
-  function revealHero() {
-    document.querySelectorAll('#hero .reveal').forEach(function (el) {
-      el.classList.add('visible');
-    });
-  }
-
-  const revealObserver = new IntersectionObserver(
-    function (entries) {
-      entries.forEach(function (entry) {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          revealObserver.unobserve(entry.target);
-        }
-      });
-    },
-    { threshold: 0.12 }
-  );
-
-  revealElements.forEach(function (el) {
-    // Skip hero elements — they're handled separately
-    if (!el.closest('#hero')) {
-      revealObserver.observe(el);
-    }
-  });
-
-  // Short delay so the page is painted before hero animates
-  setTimeout(revealHero, 80);
 
   /* ── ACTIVE NAV LINK HIGHLIGHT ─────────────────────────── */
   const navAnchors = document.querySelectorAll('.nav-links a');

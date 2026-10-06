@@ -22,9 +22,11 @@
   <meta name="color-scheme" content="light dark" />
   <script>
     (function () {
-      var theme = window.matchMedia('(prefers-color-scheme: dark)');
-      document.documentElement.classList.toggle('dark', theme.matches);
-      document.documentElement.style.colorScheme = theme.matches ? 'dark' : 'light';
+      var preference = 'system';
+      try { preference = localStorage.getItem('portfolio-theme') || 'system'; } catch (e) {}
+      var dark = preference === 'dark' || (preference !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.classList.toggle('dark', dark);
+      document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
     })();
   </script>
 
@@ -66,9 +68,14 @@
         <a href="#skills">Skills</a>
         <a href="#contact">Contact</a>
       </nav>
-      <button class="nav-hamburger" id="hamburger" aria-label="Toggle menu">
-        <span></span><span></span><span></span>
-      </button>
+      <div class="nav-actions">
+        <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Theme: System. Switch to Light" title="Theme: System. Switch to Light">
+          <span id="theme-icon" aria-hidden="true">&#9680;</span><span id="theme-label">System</span>
+        </button>
+        <button class="nav-hamburger" id="hamburger" type="button" aria-label="Toggle menu" aria-expanded="false" aria-controls="nav-links">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
     </div>
   </header>
 
@@ -79,25 +86,25 @@
       <div class="hero-bg-pattern"></div>
       <div class="hero-inner">
         <div class="hero-text">
-          <p class="hero-eyebrow reveal" data-cms="hero-eyebrow" id="hero-typed">Zoology · Primatology · Conservation</p>
-          <h1 class="hero-name reveal delay-1">Mst. Sadia<br><em>Afrin Shimu</em></h1>
-          <p class="hero-tagline reveal delay-2" data-cms="hero-tagline">
+          <p class="hero-eyebrow" data-cms="hero-eyebrow" id="hero-typed">Zoology · Primatology · Conservation</p>
+          <h1 class="hero-name">Mst. Sadia<br><em>Afrin Shimu</em></h1>
+          <p class="hero-tagline" data-cms="hero-tagline">
             Studying Bengal slow lorises, primate trafficking, and conservation education across Bangladesh.
           </p>
-          <div class="hero-stats reveal delay-3" data-cms="hero-stats">
+          <div class="hero-stats" data-cms="hero-stats">
             <div class="stat"><span class="stat-num">5</span><span class="stat-label">Research Outputs</span></div>
             <div class="stat-divider"></div>
             <div class="stat"><span class="stat-num">762</span><span class="stat-label">Research Reads</span></div>
             <div class="stat-divider"></div>
-            <div class="stat"><span class="stat-num" data-citation-count aria-live="polite">8</span><span class="stat-label">Total Citations</span></div>
+            <div class="stat"><span class="stat-num" data-citation-count aria-live="polite">&mdash;</span><span class="stat-label">Crossref Citations</span></div>
           </div>
-          <div class="hero-actions reveal delay-4">
+          <div class="hero-actions">
             <a href="#research" class="btn-primary">View Research</a>
             <a href="#contact" class="btn-ghost">Get in Touch</a>
             <a href="/cv.pdf" class="btn-ghost" download="Sadia_Afrin_Shimu_CV.pdf">Download CV</a>
           </div>
         </div>
-        <div class="hero-portrait reveal delay-2">
+        <div class="hero-portrait">
           <div class="portrait-frame">
             <img src="images/portrait.jpg" alt="Mst. Sadia Afrin Shimu" id="portrait-img" class="img-reveal" />
             <div class="portrait-badge"><i class="fa-solid fa-leaf"></i> Wildlife Researcher</div>
@@ -141,7 +148,7 @@
               <div class="detail-row"><span class="detail-label">Discipline</span><span>Zoology / Wildlife Biology</span></div>
               <div class="detail-row"><span class="detail-label">Specialization</span><span>Primatology, Conservation Ecology, Wildlife Management</span></div>
               <div class="detail-row"><span class="detail-label">ResearchGate</span><span>5 linked outputs, 762 profile reads</span></div>
-              <div class="detail-row"><span class="detail-label">Citations</span><span><span data-citation-count>8</span> total citations</span></div>
+              <div class="detail-row"><span class="detail-label">Citations</span><span><span data-citation-count>&mdash;</span> Crossref citations</span></div>
               <div class="detail-row"><span class="detail-label">Region</span><span>Bangladesh</span></div>
               <div class="detail-row"><span class="detail-label">Email</span><span>sadiaafrinshimu7@gmail.com</span></div>
             </div>
@@ -443,34 +450,7 @@
 
         </div>
 
-        <!--
-        Certificates section hidden temporarily.
-        <div class="cert-block">
-          <h3 class="cert-heading">Certificates & Academic Records</h3>
-          <div class="cert-grid" data-cms="certificates-grid">
-            <a href="#" class="cert-card">
-              <i class="fa-solid fa-certificate"></i>
-              <span>Certificate</span>
-              <small>To be updated</small>
-            </a>
-            <a href="https://orcid.org/0009-0002-6192-1703" target="_blank" rel="noopener noreferrer" class="cert-card">
-              <i class="fa-brands fa-orcid"></i>
-              <span>ORCID</span>
-              <small>0009-0002-6192-1703</small>
-            </a>
-            <a href="https://www.researchgate.net/profile/Mst-Sadia-Afrin-Shimu" target="_blank" rel="noopener noreferrer" class="cert-card">
-              <i class="fa-brands fa-researchgate"></i>
-              <span>ResearchGate</span>
-              <small>5 linked outputs · 762 profile reads</small>
-            </a>
-            <a href="https://scholar.google.com/citations?user=grEp4CkAAAAJ&amp;hl=en" target="_blank" rel="noopener noreferrer" class="cert-card">
-              <i class="fa-solid fa-graduation-cap"></i>
-              <span>Google Scholar</span>
-              <small><span data-citation-count>8</span> total citations</small>
-            </a>
-          </div>
-        </div>
-        -->
+
 
       </div>
     </section>
@@ -586,11 +566,11 @@
         <p class="footer-desc">Zoology · Primatology · Conservation · Bangladesh</p>
       </div>
       <div class="footer-links">
-        <a href="mailto:sadiaafrinshimu7@gmail.com"><i class="fa-solid fa-envelope"></i></a>
-        <a href="https://orcid.org/0009-0002-6192-1703" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-orcid"></i></a>
-        <a href="https://www.researchgate.net/profile/Mst-Sadia-Afrin-Shimu" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-researchgate"></i></a>
+        <a href="mailto:sadiaafrinshimu7@gmail.com" aria-label="Email"><i class="fa-solid fa-envelope"></i></a>
+        <a href="https://orcid.org/0009-0002-6192-1703" aria-label="ORCID" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-orcid"></i></a>
+        <a href="https://www.researchgate.net/profile/Mst-Sadia-Afrin-Shimu" aria-label="ResearchGate" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-researchgate"></i></a>
         <a href="https://scholar.google.com/citations?user=grEp4CkAAAAJ&amp;hl=en" target="_blank" rel="noopener noreferrer" aria-label="Google Scholar"><i class="fa-solid fa-graduation-cap"></i></a>
-        <a href="https://www.linkedin.com/in/sadia-afrin-shimu-075957269" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-linkedin"></i></a>
+        <a href="https://www.linkedin.com/in/sadia-afrin-shimu-075957269" aria-label="LinkedIn" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-linkedin"></i></a>
       </div>
       <p class="footer-copy">© 2026 Mst. Sadia Afrin Shimu. All rights reserved.</p>
     </div>

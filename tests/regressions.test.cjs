@@ -18,7 +18,6 @@ test('citation updates stay consistent regardless of counter animation timing', 
       IntersectionObserver: class { constructor(cb) { this.cb = cb; } observe() { this.cb([{ isIntersecting: true }]); } disconnect() {} }
     });
     vm.runInContext(section('  function updateCitationCount', '  function fetchCitationCountForDoi'), context);
-    vm.runInContext('const initialCitationCount = currentCitationCount();', context);
     vm.runInContext(section('  function initDynamicCitationCount', '  (function initDarkMode'), context);
     vm.runInContext(section('  var statNums', '  /* ── TYPED TEXT EFFECT'), context);
     await new Promise(resolve => setImmediate(resolve));
@@ -76,7 +75,7 @@ test('gallery Tab wraps in both directions and Escape closes the dialog', () => 
   const lightbox = { classList: { contains: () => true }, querySelectorAll: () => [first, {}, last] };
   const document = { activeElement: last, getElementById: () => lightbox, addEventListener: (_, cb) => listener = cb };
   const context = vm.createContext({ document, closeGalleryLightbox: () => closed = true, moveGalleryPhoto() {} });
-  vm.runInContext(section("  document.addEventListener('keydown'", '  renderGalleryCarousels();'), context);
+  vm.runInContext(section("  document.addEventListener('keydown', function (event) {\n    const lightbox", '  renderGalleryCarousels();'), context);
   listener({ key: 'Tab', shiftKey: false, preventDefault() { prevented++; } });
   assert.equal(focused, first);
   document.activeElement = first;
@@ -102,19 +101,55 @@ test('reduced motion disables autoplay and animated carousel movement', () => {
   assert.ok(calls.every(call => call.opts.duration === 0));
 });
 
-test('system theme wins over saved preferences and tracks changes in both directions', () => {
-  const theme = { matches: true, addEventListener(name, callback) { assert.equal(name, 'change'); this.change = callback; } };
-  const classes = new Set();
-  const document = { documentElement: { classList: { toggle(name, value) { value ? classes.add(name) : classes.delete(name); } }, style: {} } };
-  const context = vm.createContext({ document, window: { matchMedia: () => theme }, localStorage: { getItem() { throw Error('Must not read saved theme'); }, setItem() { throw Error('Must not save theme'); } } });
+test('theme defaults to system, cycles explicit modes, persists, and restores system tracking', () => {
+  for (const saved of [null, 'light', 'dark', 'invalid']) {
+    const theme = { matches: true, addEventListener(_, cb) { this.change = cb; } };
+    const classes = new Set(); const writes = []; const events = {};
+    const button = { attributes: {}, setAttribute(k,v) { this.attributes[k]=v; }, addEventListener(_,cb) { this.click=cb; } };
+    const label = {}; const icon = {};
+    const document = { getElementById: id => ({ 'theme-toggle': button, 'theme-label': label, 'theme-icon': icon })[id], documentElement: { classList: { toggle(name,value) { value ? classes.add(name) : classes.delete(name); } }, style: {} } };
+    const context = vm.createContext({ document, window: { matchMedia: () => theme, addEventListener: (name,cb) => events[name]=cb }, localStorage: { getItem: () => saved, setItem: (k,v) => writes.push([k,v]) } });
+    vm.runInContext(section('  (function initDarkMode()', "  window.addEventListener('scroll'"), context);
+    assert.equal(classes.has('dark'), saved !== 'light');
+    events.storage({ key: 'portfolio-theme', newValue: 'system' });
+    theme.matches=false; theme.change(); assert.equal(classes.has('dark'),false);
+    theme.matches=true; theme.change(); assert.equal(classes.has('dark'),true);
+    button.click(); assert.equal(label.textContent,'Light'); assert.equal(classes.has('dark'),false);
+    theme.change(); assert.equal(classes.has('dark'),false);
+    button.click(); assert.equal(label.textContent,'Dark');
+    theme.matches=false; theme.change(); assert.equal(classes.has('dark'),true);
+    button.click(); assert.equal(label.textContent,'System'); assert.equal(classes.has('dark'),false);
+    assert.deepEqual(writes.map(pair=>pair[1]), ['light','dark','system']);
+    assert.match(button.attributes['aria-label'], /System.*Light/);
+  }
+});
+
+test('theme remains usable when storage is unavailable', () => {
+  let click; const classes=new Set();
+  const context=vm.createContext({ document: { getElementById: id => id==='theme-toggle' ? { setAttribute() {}, addEventListener(_,cb) { click=cb; } } : null, documentElement: { classList: { toggle(k,v) { v ? classes.add(k) : classes.delete(k); } }, style: {} } }, window: { matchMedia: () => ({ matches: true, addEventListener() {} }), addEventListener() {} }, localStorage: { getItem() { throw Error('blocked'); }, setItem() { throw Error('blocked'); } } });
   vm.runInContext(section('  (function initDarkMode()', "  window.addEventListener('scroll'"), context);
-  assert.ok(classes.has('dark'));
-  assert.equal(document.documentElement.style.colorScheme, 'dark');
-  theme.matches = false; theme.change();
-  assert.ok(!classes.has('dark'));
-  assert.equal(document.documentElement.style.colorScheme, 'light');
-  theme.matches = true; theme.change();
-  assert.ok(classes.has('dark'));
+  assert.ok(classes.has('dark')); click(); assert.ok(!classes.has('dark'));
+});
+
+test('citation totals accept zero and lower counts, and never show partial results', async () => {
+  for (const counts of [[0,0], [1,2], [6,null], [null,null]]) {
+    const output={ textContent: '8', setAttribute() {} }; let i=0;
+    const context=vm.createContext({ document: { querySelector: () => output, querySelectorAll: () => [output] }, citationDoiList: ['a','b'], fetch() {}, fetchCitationCountForDoi: async () => counts[i++] });
+    vm.runInContext(section('  function updateCitationCount', '  function fetchCitationCountForDoi'),context);
+    vm.runInContext(section('  function initDynamicCitationCount','  (function initDarkMode'),context);
+    await new Promise(resolve=>setImmediate(resolve));
+    assert.equal(output.textContent, counts.includes(null) ? '\u2014' : String(counts[0]+counts[1]));
+  }
+});
+
+test('Escape closes the navigation and restores focus to its toggle', () => {
+  const classes=new Set(); const events={}; let focused=false; const attrs={};
+  const hamburger={ addEventListener(_,cb) { this.click=cb; }, setAttribute(k,v) { attrs[k]=v; }, focus() { focused=true; } };
+  const navLinks={ classList: { toggle(k) { classes.has(k) ? classes.delete(k) : classes.add(k); }, contains: k=>classes.has(k), remove: k=>classes.delete(k) }, querySelectorAll: () => [] };
+  const context=vm.createContext({ document: { getElementById: id=>id==='hamburger' ? hamburger : navLinks, addEventListener: (name,cb)=>events[name]=cb }, navbar: { contains: () => true } });
+  vm.runInContext(section('  const hamburger =','  const navAnchors ='),context);
+  hamburger.click(); assert.ok(classes.has('open'));
+  events.keydown({key:'Escape'}); assert.ok(!classes.has('open')); assert.equal(attrs['aria-expanded'],'false'); assert.ok(focused);
 });
 
 test('body, highlighted text, and filled buttons meet normal-text contrast in both themes', () => {
@@ -134,4 +169,29 @@ test('body, highlighted text, and filled buttons meet normal-text contrast in bo
     }
     assert.ok(contrast(value('--on-accent'),value('--accent'))>=4.5);
   }
+});
+
+
+test('initial theme prevents a flash and agrees with saved or system preferences', () => {
+  const html=fs.readFileSync(require('node:path').join(__dirname,'../index.html'),'utf8');
+  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1];
+  for(const saved of [null,'system','light','dark','invalid']) for(const systemDark of [false,true]) {
+    let applied; const root={ classList: { toggle(_,value) { applied=value; } }, style: {} };
+    vm.runInNewContext(script,{ document: { documentElement: root }, window: { matchMedia: () => ({matches:systemDark}) }, localStorage: { getItem: () => saved } });
+    const expected=saved==='dark' || (saved!=='light' && systemDark);
+    assert.equal(applied,expected); assert.equal(root.style.colorScheme,expected?'dark':'light');
+  }
+});
+
+test('footer uses theme surfaces and all social links have accessible names', () => {
+  const path=require('node:path');
+  const css=fs.readFileSync(path.join(__dirname,'../css/main.css'),'utf8');
+  const footerRule=css.match(/#footer\s*\{([^}]+)\}/)[1];
+  assert.match(footerRule,/background:\s*var\(--surface\)/);
+  assert.match(footerRule,/color:\s*var\(--text\)/);
+  const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+  const links=html.match(/<div class="footer-links">([\s\S]*?)<\/div>/)[1];
+  const anchors=[...links.matchAll(/<a\b[^>]+>/g)];
+  assert.equal(anchors.length,5);
+  assert.ok(anchors.every(match=>/aria-label="[^"]+"/.test(match[0])));
 });

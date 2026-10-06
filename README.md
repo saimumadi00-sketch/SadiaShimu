@@ -13,7 +13,6 @@ Static portfolio website hosted on Vercel.
 ├── js/main.js          # All scripts
 ├── images/             # Portrait and gallery photos
 │   ├── portrait.jpg    # Profile photo
-│   ├── gallery-1.jpg   # Gallery album covers
 │   └── gallery/        # Gallery photo folders
 ├── certificates/       # Certificate images
 ├── cv.pdf              # Downloadable CV
@@ -25,7 +24,13 @@ Static portfolio website hosted on Vercel.
 
 ## Updating content
 
-Edit `index.html` directly — all content is hardcoded static HTML.
+Edit `index.html` for portfolio content. Gallery albums, captions, and map markers live in `js/main.js`; album covers use photos from `images/gallery/`.
+
+The theme button cycles System, Light, and Dark. System follows device settings; explicit choices are saved locally.
+
+Citation totals come from Crossref for the three journal articles. An unavailable total displays a dash rather than a partial count.
+
+Run regression checks with `node --test tests/regressions.test.cjs`.
 
 ## Deployment
 
