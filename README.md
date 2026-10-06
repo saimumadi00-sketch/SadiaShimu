@@ -26,7 +26,7 @@ Static portfolio website hosted on Vercel.
 
 Edit `index.html` for portfolio content. Gallery albums, captions, and map markers live in `js/main.js`; album covers use photos from `images/gallery/`.
 
-The theme button cycles System, Light, and Dark. System follows device settings; explicit choices are saved locally.
+The theme button displays the active Light or Dark theme. Internally it still cycles through system preference, light, and dark; system preference follows device settings, and choices are saved locally.
 
 Citation totals come from Crossref for the three journal articles. An unavailable total displays a dash rather than a partial count.
 

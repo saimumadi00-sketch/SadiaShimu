@@ -163,11 +163,10 @@ document.addEventListener('DOMContentLoaded', function () {
       const dark = preference === 'dark' || (preference === 'system' && systemTheme.matches);
       document.documentElement.classList.toggle('dark', dark);
       document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
-      const name = preference[0].toUpperCase() + preference.slice(1);
-      const next = modes[(modes.indexOf(preference) + 1) % modes.length];
-      const description = 'Theme: ' + name + '. Switch to ' + next[0].toUpperCase() + next.slice(1);
+      const name = dark ? 'Dark' : 'Light';
+      const description = 'Theme: ' + name + '. Change theme';
       if (label) label.textContent = name;
-      if (icon) icon.textContent = { system: '\u25d0', light: '\u2600', dark: '\u263e' }[preference];
+      if (icon) icon.textContent = dark ? '\u263e' : '\u2600';
       if (button) {
         button.setAttribute('aria-label', description);
         button.setAttribute('title', description);

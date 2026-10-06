@@ -118,9 +118,12 @@ test('theme defaults to system, cycles explicit modes, persists, and restores sy
     theme.change(); assert.equal(classes.has('dark'),false);
     button.click(); assert.equal(label.textContent,'Dark');
     theme.matches=false; theme.change(); assert.equal(classes.has('dark'),true);
-    button.click(); assert.equal(label.textContent,'System'); assert.equal(classes.has('dark'),false);
+    button.click(); assert.equal(label.textContent,'Light'); assert.equal(classes.has('dark'),false);
     assert.deepEqual(writes.map(pair=>pair[1]), ['light','dark','system']);
-    assert.match(button.attributes['aria-label'], /System.*Light/);
+    assert.match(button.attributes['aria-label'], /Theme: Light/);
+    theme.matches=true; theme.change();
+    assert.equal(label.textContent,'Dark');
+    assert.ok(!button.attributes['aria-label'].includes('System'));
   }
 });
 
